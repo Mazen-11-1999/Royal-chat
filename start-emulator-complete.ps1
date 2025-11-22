@@ -28,16 +28,27 @@ $envContent | Out-File -FilePath ".env.local" -Encoding UTF8 -Force
 Write-Host "✓ تم إنشاء .env.local" -ForegroundColor Green
 Write-Host ""
 
-# 3. التحقق من أن التطبيق لا يعمل
-Write-Host "[3] التحقق من المنفذ 4000..." -ForegroundColor Yellow
+# 3. إيقاف جميع عمليات Node.js و npm
+Write-Host "[3] جاري إيقاف جميع عمليات Node.js..." -ForegroundColor Yellow
+try {
+    Get-Process -Name "node" -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
+    Get-Process -Name "gnode" -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
+    Get-Process -Name "npm" -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
+    Start-Sleep -Seconds 2
+    Write-Host "✓ تم إيقاف جميع عمليات Node.js" -ForegroundColor Green
+} catch {
+    Write-Host "✓ لا توجد عمليات Node.js قيد التشغيل" -ForegroundColor Green
+}
+
+# التحقق من المنفذ 4000
 $portInUse = Get-NetTCPConnection -LocalPort 4000 -ErrorAction SilentlyContinue
 if ($portInUse) {
-    Write-Host "⚠️  المنفذ 4000 مستخدم، جاري إيقاف العملية..." -ForegroundColor Yellow
+    Write-Host "⚠️  المنفذ 4000 لا يزال مستخدم، جاري إيقاف العملية..." -ForegroundColor Yellow
     $processId = ($portInUse | Select-Object -First 1).OwningProcess
     if ($processId) {
         Stop-Process -Id $processId -Force -ErrorAction SilentlyContinue
         Start-Sleep -Seconds 2
-        Write-Host "✓ تم إيقاف العملية" -ForegroundColor Green
+        Write-Host "✓ تم إيقاف العملية على المنفذ 4000" -ForegroundColor Green
     }
 } else {
     Write-Host "✓ المنفذ 4000 متاح" -ForegroundColor Green

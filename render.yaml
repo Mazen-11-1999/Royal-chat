@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: royal-chat
+    env: node
+    buildCommand: npm install && npm run build
+    startCommand: npm run start:server
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 8080
+
+databases:
+  - name: royal-chat-db
+    plan: free
+    databaseName: royal-chat
+

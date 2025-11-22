@@ -14,6 +14,7 @@
     "start:admin": "next start -p 4001",
     "start:next": "next start",
     "start:server": "tsx --tsconfig server/tsconfig.json server/index.ts",
+    "start:production": "NODE_ENV=production npm run build && npm run start:server",
     "lint": "eslint .",
     "server": "tsx --tsconfig server/tsconfig.json server/index.ts",
     "dev:all": "concurrently \"npm run dev\" \"npm run server\" \"npm run dev:admin\"",
@@ -55,7 +56,8 @@
     "socket.io": "^4.8.1",
     "socket.io-client": "^4.8.1",
     "tailwind-merge": "^3.3.1",
-    "tailwindcss-animate": "^1.0.7"
+    "tailwindcss-animate": "^1.0.7",
+    "web-push": "^3.6.6"
   },
   "devDependencies": {
     "@eslint/js": "9.11.1",
@@ -69,6 +71,7 @@
     "@types/react-dom": "^18.3.0",
     "@types/socket.io": "^3.0.1",
     "@types/socket.io-client": "^1.4.36",
+    "@types/web-push": "^3.6.3",
     "@typescript-eslint/eslint-plugin": "^8.46.3",
     "@typescript-eslint/parser": "^8.46.3",
     "@typescript-eslint/typescript-estree": "^8.46.3",

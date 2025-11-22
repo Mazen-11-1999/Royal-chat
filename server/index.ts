@@ -5,10 +5,9 @@ import cors from 'cors';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
-import { connectDatabase, User, Conversation, Message, Contact } from './database.js';
+import { connectDatabase, User, Conversation, Message, Contact, PushSubscription, Admin, FreeSubscription } from './database.js';
 import { sendOTP, verifyOTP, findUsersByPhoneNumbers } from './auth.js';
-import { connectDatabase, User, Conversation, Message, Contact } from './database.js';
-import { sendOTP, verifyOTP, findUsersByPhoneNumbers } from './auth.js';
+import { sendMessageNotification } from './pushNotifications.js';
 
 // Use CommonJS approach for __dirname and __filename
 const __filename = fileURLToPath(import.meta.url);
@@ -112,6 +111,557 @@ app.post('/api/users/find-by-phones', async (req, res) => {
   }
 });
 
+// Push Notification Routes
+// Subscribe to push notifications
+app.post('/api/notifications/subscribe', async (req, res) => {
+  try {
+    const { userId, subscription, userAgent, deviceInfo } = req.body;
+    
+    if (!userId || !subscription || !subscription.endpoint) {
+      return res.status(400).json({ success: false, message: 'بيانات الاشتراك مطلوبة' });
+    }
+
+    // Check if user exists
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'المستخدم غير موجود' });
+    }
+
+    // Check if subscription already exists
+    const existingSubscription = await PushSubscription.findOne({ endpoint: subscription.endpoint });
+    
+    if (existingSubscription) {
+      // Update existing subscription
+      existingSubscription.userId = userId;
+      existingSubscription.keys = subscription.keys;
+      existingSubscription.userAgent = userAgent || '';
+      existingSubscription.deviceInfo = deviceInfo || {};
+      existingSubscription.isActive = true;
+      existingSubscription.updatedAt = new Date();
+      existingSubscription.lastUsed = new Date();
+      await existingSubscription.save();
+      
+      return res.json({ success: true, message: 'تم تحديث الاشتراك بنجاح', subscription: existingSubscription });
+    }
+
+    // Create new subscription
+    const newSubscription = new PushSubscription({
+      userId: userId,
+      endpoint: subscription.endpoint,
+      keys: subscription.keys,
+      userAgent: userAgent || '',
+      deviceInfo: deviceInfo || {},
+      isActive: true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      lastUsed: new Date()
+    });
+
+    await newSubscription.save();
+    
+    console.log(`✅ Push subscription registered for user ${userId}`);
+    res.json({ success: true, message: 'تم تسجيل الاشتراك بنجاح', subscription: newSubscription });
+  } catch (error: any) {
+    console.error('Error in subscribe:', error);
+    res.status(500).json({ success: false, message: 'حدث خطأ في الخادم' });
+  }
+});
+
+// Unsubscribe from push notifications
+app.post('/api/notifications/unsubscribe', async (req, res) => {
+  try {
+    const { userId, endpoint } = req.body;
+    
+    if (!userId || !endpoint) {
+      return res.status(400).json({ success: false, message: 'بيانات إلغاء الاشتراك مطلوبة' });
+    }
+
+    // Find and deactivate subscription
+    const subscription = await PushSubscription.findOne({ userId, endpoint });
+    
+    if (subscription) {
+      subscription.isActive = false;
+      subscription.updatedAt = new Date();
+      await subscription.save();
+      
+      console.log(`✅ Push subscription unsubscribed for user ${userId}`);
+      res.json({ success: true, message: 'تم إلغاء الاشتراك بنجاح' });
+    } else {
+      res.status(404).json({ success: false, message: 'الاشتراك غير موجود' });
+    }
+  } catch (error: any) {
+    console.error('Error in unsubscribe:', error);
+    res.status(500).json({ success: false, message: 'حدث خطأ في الخادم' });
+  }
+});
+
+// Get user's push subscriptions
+app.get('/api/notifications/subscriptions/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    
+    const subscriptions = await PushSubscription.find({ userId, isActive: true });
+    
+    res.json({ success: true, subscriptions });
+  } catch (error: any) {
+    console.error('Error getting subscriptions:', error);
+    res.status(500).json({ success: false, message: 'حدث خطأ في الخادم' });
+  }
+});
+
+// Admin Management Routes
+// Helper function to hash password
+function hashPassword(password: string): string {
+  return crypto.createHash('sha256').update(password).digest('hex');
+}
+
+// Admin Authentication
+app.post('/api/admin/login', async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    
+    if (!username || !password) {
+      return res.status(400).json({ success: false, message: 'اسم المستخدم وكلمة المرور مطلوبان' });
+    }
+
+    const admin = await Admin.findOne({ username, isActive: true });
+    if (!admin) {
+      return res.status(401).json({ success: false, message: 'بيانات الدخول غير صحيحة' });
+    }
+
+    const hashedPassword = hashPassword(password);
+    if (admin.password !== hashedPassword) {
+      return res.status(401).json({ success: false, message: 'بيانات الدخول غير صحيحة' });
+    }
+
+    // Update last login
+    admin.lastLogin = new Date();
+    await admin.save();
+
+    // Get user info
+    const user = await User.findById(admin.userId);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'المستخدم غير موجود' });
+    }
+
+    res.json({
+      success: true,
+      admin: {
+        id: admin._id.toString(),
+        userId: admin.userId.toString(),
+        username: admin.username,
+        name: admin.name,
+        role: admin.role,
+        permissions: admin.permissions,
+        user: {
+          id: user._id.toString(),
+          name: user.name,
+          avatar: user.avatar,
+          phoneNumber: user.phoneNumber,
+          email: user.email
+        }
+      }
+    });
+  } catch (error: any) {
+    console.error('Error in admin login:', error);
+    res.status(500).json({ success: false, message: 'حدث خطأ في الخادم' });
+  }
+});
+
+// Get all admins (owner only)
+app.get('/api/admin/admins', async (req, res) => {
+  try {
+    const { ownerId } = req.query;
+    
+    // Verify owner
+    const owner = await Admin.findOne({ userId: ownerId, role: 'owner' });
+    if (!owner) {
+      return res.status(403).json({ success: false, message: 'غير مصرح لك' });
+    }
+
+    const admins = await Admin.find({ isActive: true }).populate('userId', 'name avatar phoneNumber email');
+    
+    res.json({
+      success: true,
+      admins: admins.map(admin => ({
+        id: admin._id.toString(),
+        userId: admin.userId.toString(),
+        username: admin.username,
+        name: admin.name,
+        role: admin.role,
+        permissions: admin.permissions,
+        isActive: admin.isActive,
+        createdAt: admin.createdAt,
+        lastLogin: admin.lastLogin,
+        user: admin.userId
+      }))
+    });
+  } catch (error: any) {
+    console.error('Error getting admins:', error);
+    res.status(500).json({ success: false, message: 'حدث خطأ في الخادم' });
+  }
+});
+
+// Create admin (owner only)
+app.post('/api/admin/create', async (req, res) => {
+  try {
+    const { ownerId, username, password, name, userId, permissions } = req.body;
+    
+    if (!ownerId || !username || !password || !name || !userId) {
+      return res.status(400).json({ success: false, message: 'جميع الحقول مطلوبة' });
+    }
+
+    // Verify owner
+    const owner = await Admin.findOne({ userId: ownerId, role: 'owner' });
+    if (!owner) {
+      return res.status(403).json({ success: false, message: 'غير مصرح لك' });
+    }
+
+    // Check if user exists
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'المستخدم غير موجود' });
+    }
+
+    // Check if username already exists
+    const existingAdmin = await Admin.findOne({ username });
+    if (existingAdmin) {
+      return res.status(400).json({ success: false, message: 'اسم المستخدم موجود بالفعل' });
+    }
+
+    // Check if user is already an admin
+    const existingUserAdmin = await Admin.findOne({ userId });
+    if (existingUserAdmin) {
+      return res.status(400).json({ success: false, message: 'المستخدم أدمن بالفعل' });
+    }
+
+    const hashedPassword = hashPassword(password);
+    const newAdmin = new Admin({
+      userId,
+      username,
+      password: hashedPassword,
+      name,
+      role: 'admin',
+      permissions: permissions || {
+        canManageUsers: false,
+        canManageAdmins: false,
+        canAccessPremiumChat: true,
+        canViewStatistics: false,
+        canManageSettings: false,
+        canAccessDatabase: false,
+        canGrantFreeSubscription: false
+      },
+      isActive: true
+    });
+
+    await newAdmin.save();
+
+    res.json({
+      success: true,
+      message: 'تم إنشاء الأدمن بنجاح',
+      admin: {
+        id: newAdmin._id.toString(),
+        userId: newAdmin.userId.toString(),
+        username: newAdmin.username,
+        name: newAdmin.name,
+        role: newAdmin.role,
+        permissions: newAdmin.permissions
+      }
+    });
+  } catch (error: any) {
+    console.error('Error creating admin:', error);
+    res.status(500).json({ success: false, message: 'حدث خطأ في الخادم' });
+  }
+});
+
+// Update admin permissions (owner only)
+app.put('/api/admin/:adminId/permissions', async (req, res) => {
+  try {
+    const { adminId } = req.params;
+    const { ownerId, permissions } = req.body;
+    
+    if (!ownerId || !permissions) {
+      return res.status(400).json({ success: false, message: 'البيانات مطلوبة' });
+    }
+
+    // Verify owner
+    const owner = await Admin.findOne({ userId: ownerId, role: 'owner' });
+    if (!owner) {
+      return res.status(403).json({ success: false, message: 'غير مصرح لك' });
+    }
+
+    const admin = await Admin.findById(adminId);
+    if (!admin) {
+      return res.status(404).json({ success: false, message: 'الأدمن غير موجود' });
+    }
+
+    admin.permissions = { ...admin.permissions, ...permissions };
+    admin.updatedAt = new Date();
+    await admin.save();
+
+    res.json({
+      success: true,
+      message: 'تم تحديث الصلاحيات بنجاح',
+      admin: {
+        id: admin._id.toString(),
+        permissions: admin.permissions
+      }
+    });
+  } catch (error: any) {
+    console.error('Error updating admin permissions:', error);
+    res.status(500).json({ success: false, message: 'حدث خطأ في الخادم' });
+  }
+});
+
+// Delete admin (owner only)
+app.delete('/api/admin/:adminId', async (req, res) => {
+  try {
+    const { adminId } = req.params;
+    const { ownerId } = req.body;
+    
+    if (!ownerId) {
+      return res.status(400).json({ success: false, message: 'معرف المالك مطلوب' });
+    }
+
+    // Verify owner
+    const owner = await Admin.findOne({ userId: ownerId, role: 'owner' });
+    if (!owner) {
+      return res.status(403).json({ success: false, message: 'غير مصرح لك' });
+    }
+
+    const admin = await Admin.findById(adminId);
+    if (!admin) {
+      return res.status(404).json({ success: false, message: 'الأدمن غير موجود' });
+    }
+
+    // Don't allow deleting owner
+    if (admin.role === 'owner') {
+      return res.status(400).json({ success: false, message: 'لا يمكن حذف المالك' });
+    }
+
+    admin.isActive = false;
+    admin.updatedAt = new Date();
+    await admin.save();
+
+    res.json({ success: true, message: 'تم حذف الأدمن بنجاح' });
+  } catch (error: any) {
+    console.error('Error deleting admin:', error);
+    res.status(500).json({ success: false, message: 'حدث خطأ في الخادم' });
+  }
+});
+
+// Grant free subscription to user
+app.post('/api/admin/grant-free-subscription', async (req, res) => {
+  try {
+    const { adminId, userId, reason, expiresAt } = req.body;
+    
+    if (!adminId || !userId) {
+      return res.status(400).json({ success: false, message: 'معرف الأدمن والمستخدم مطلوبان' });
+    }
+
+    // Verify admin and check permission
+    const admin = await Admin.findById(adminId);
+    if (!admin || !admin.isActive) {
+      return res.status(403).json({ success: false, message: 'غير مصرح لك' });
+    }
+
+    if (!admin.permissions.canGrantFreeSubscription && admin.role !== 'owner') {
+      return res.status(403).json({ success: false, message: 'ليس لديك صلاحية منح الاشتراك المجاني' });
+    }
+
+    // Check if user exists
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'المستخدم غير موجود' });
+    }
+
+    // Check if user already has free subscription
+    const existingSubscription = await FreeSubscription.findOne({ userId, status: 'active' });
+    if (existingSubscription) {
+      return res.status(400).json({ success: false, message: 'المستخدم لديه اشتراك مجاني نشط بالفعل' });
+    }
+
+    const freeSubscription = new FreeSubscription({
+      userId,
+      grantedBy: adminId,
+      reason: reason || '',
+      status: 'active',
+      expiresAt: expiresAt ? new Date(expiresAt) : null // null means lifetime
+    });
+
+    await freeSubscription.save();
+
+    res.json({
+      success: true,
+      message: 'تم منح الاشتراك المجاني بنجاح',
+      subscription: {
+        id: freeSubscription._id.toString(),
+        userId: freeSubscription.userId.toString(),
+        status: freeSubscription.status,
+        expiresAt: freeSubscription.expiresAt
+      }
+    });
+  } catch (error: any) {
+    console.error('Error granting free subscription:', error);
+    res.status(500).json({ success: false, message: 'حدث خطأ في الخادم' });
+  }
+});
+
+// Revoke free subscription
+app.post('/api/admin/revoke-free-subscription', async (req, res) => {
+  try {
+    const { adminId, userId } = req.body;
+    
+    if (!adminId || !userId) {
+      return res.status(400).json({ success: false, message: 'معرف الأدمن والمستخدم مطلوبان' });
+    }
+
+    // Verify admin and check permission
+    const admin = await Admin.findById(adminId);
+    if (!admin || !admin.isActive) {
+      return res.status(403).json({ success: false, message: 'غير مصرح لك' });
+    }
+
+    if (!admin.permissions.canGrantFreeSubscription && admin.role !== 'owner') {
+      return res.status(403).json({ success: false, message: 'ليس لديك صلاحية إلغاء الاشتراك المجاني' });
+    }
+
+    const subscription = await FreeSubscription.findOne({ userId, status: 'active' });
+    if (!subscription) {
+      return res.status(404).json({ success: false, message: 'لا يوجد اشتراك مجاني نشط' });
+    }
+
+    subscription.status = 'revoked';
+    subscription.updatedAt = new Date();
+    await subscription.save();
+
+    res.json({ success: true, message: 'تم إلغاء الاشتراك المجاني بنجاح' });
+  } catch (error: any) {
+    console.error('Error revoking free subscription:', error);
+    res.status(500).json({ success: false, message: 'حدث خطأ في الخادم' });
+  }
+});
+
+// Check if user has free subscription
+app.get('/api/subscription/free/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    
+    const subscription = await FreeSubscription.findOne({ userId, status: 'active' });
+    
+    if (!subscription) {
+      return res.json({ success: true, hasFreeSubscription: false });
+    }
+
+    // Check if expired
+    if (subscription.expiresAt && new Date(subscription.expiresAt) < new Date()) {
+      subscription.status = 'expired';
+      await subscription.save();
+      return res.json({ success: true, hasFreeSubscription: false });
+    }
+
+    res.json({
+      success: true,
+      hasFreeSubscription: true,
+      subscription: {
+        id: subscription._id.toString(),
+        expiresAt: subscription.expiresAt,
+        reason: subscription.reason
+      }
+    });
+  } catch (error: any) {
+    console.error('Error checking free subscription:', error);
+    res.status(500).json({ success: false, message: 'حدث خطأ في الخادم' });
+  }
+});
+
+// Get all users (for admin management)
+app.get('/api/admin/users', async (req, res) => {
+  try {
+    const { adminId, page = 1, limit = 50, search = '' } = req.query;
+    
+    if (!adminId) {
+      return res.status(400).json({ success: false, message: 'معرف الأدمن مطلوب' });
+    }
+
+    // Verify admin
+    const admin = await Admin.findById(adminId);
+    if (!admin || !admin.isActive) {
+      return res.status(403).json({ success: false, message: 'غير مصرح لك' });
+    }
+
+    if (!admin.permissions.canManageUsers && admin.role !== 'owner') {
+      return res.status(403).json({ success: false, message: 'ليس لديك صلاحية إدارة المستخدمين' });
+    }
+
+    const query: any = {};
+    if (search) {
+      query.$or = [
+        { name: { $regex: search, $options: 'i' } },
+        { phoneNumber: { $regex: search, $options: 'i' } },
+        { email: { $regex: search, $options: 'i' } }
+      ];
+    }
+
+    const skip = (Number(page) - 1) * Number(limit);
+    const users = await User.find(query)
+      .skip(skip)
+      .limit(Number(limit))
+      .sort({ createdAt: -1 });
+
+    const total = await User.countDocuments(query);
+
+    // Check free subscriptions for each user
+    const usersWithSubscriptions = await Promise.all(
+      users.map(async (user) => {
+        const freeSubscription = await FreeSubscription.findOne({ userId: user._id, status: 'active' });
+        return {
+          id: user._id.toString(),
+          name: user.name,
+          avatar: user.avatar,
+          phoneNumber: user.phoneNumber,
+          email: user.email,
+          status: user.status,
+          isVerified: user.isVerified,
+          createdAt: user.createdAt,
+          hasFreeSubscription: !!freeSubscription,
+          freeSubscription: freeSubscription ? {
+            id: freeSubscription._id.toString(),
+            expiresAt: freeSubscription.expiresAt,
+            reason: freeSubscription.reason
+          } : null
+        };
+      })
+    );
+
+    res.json({
+      success: true,
+      users: usersWithSubscriptions,
+      pagination: {
+        page: Number(page),
+        limit: Number(limit),
+        total,
+        pages: Math.ceil(total / Number(limit))
+      }
+    });
+  } catch (error: any) {
+    console.error('Error getting users:', error);
+    res.status(500).json({ success: false, message: 'حدث خطأ في الخادم' });
+  }
+});
+
+// Get VAPID public key (for client-side subscription)
+app.get('/api/notifications/vapid-key', async (req, res) => {
+  try {
+    const { getVAPIDPublicKey } = await import('./pushNotifications.js');
+    const publicKey = getVAPIDPublicKey();
+    res.json({ success: true, publicKey });
+  } catch (error: any) {
+    console.error('Error getting VAPID key:', error);
+    res.status(500).json({ success: false, message: 'حدث خطأ في الخادم' });
+  }
+});
+
 // Serve static files from the React app
 app.use(express.static(path.join(__dirname, '../dist')));
 
@@ -162,6 +712,120 @@ io.on('connection', (socket) => {
 
   // Store user data in room
   const roomUserData = new Map<string, Map<string, any>>(); // conversationId -> userId -> userData
+
+  // Get conversations for a user
+  socket.on('get_conversations', async (data: { userId: string }) => {
+    try {
+      const { userId } = data;
+      console.log(`📋 Requesting conversations for user: ${userId}`);
+      
+      // Get conversations from database where user is a participant
+      const userConversations = await Conversation.find({
+        participants: { $in: [userId] }
+      })
+      .populate({
+        path: 'participants',
+        select: 'id name avatar status lastSeen',
+        model: 'User'
+      })
+      .populate({
+        path: 'lastMessage',
+        model: 'Message'
+      })
+      .sort({ lastMessageTime: -1, updatedAt: -1 })
+      .limit(100);
+
+      // Convert to format expected by client
+      const conversationsList = userConversations.map(conv => {
+        const participants = Array.isArray(conv.participants) 
+          ? conv.participants.map((p: any) => ({
+              id: p._id?.toString() || p.id || p.toString(),
+              name: p.name || 'Unknown',
+              avatar: p.avatar || '',
+              status: p.status || 'offline',
+              lastSeen: p.lastSeen || new Date()
+            }))
+          : [];
+
+        return {
+          id: conv._id?.toString() || conv.id,
+          name: conv.name || '',
+          isGroup: conv.isGroup || false,
+          avatar: conv.avatar || '',
+          participants: participants,
+          lastMessage: conv.lastMessage ? {
+            id: conv.lastMessage._id?.toString() || conv.lastMessage.id,
+            content: conv.lastMessage.content || '',
+            timestamp: conv.lastMessage.timestamp || new Date(),
+            senderId: conv.lastMessage.senderId?.toString() || conv.lastMessage.senderId,
+            status: conv.lastMessage.status || 'sent'
+          } : null,
+          lastMessageTime: conv.lastMessageTime || conv.updatedAt || conv.createdAt,
+          isPinned: conv.isPinned || false,
+          isArchived: conv.isArchived || false,
+          createdAt: conv.createdAt || new Date(),
+          updatedAt: conv.updatedAt || new Date()
+        };
+      });
+
+      socket.emit('conversations_list', conversationsList);
+      console.log(`✅ Sent ${conversationsList.length} conversations to user ${userId}`);
+    } catch (error: any) {
+      console.error('Error getting conversations:', error);
+      socket.emit('conversations_list', []);
+    }
+  });
+
+  // Get messages for a conversation
+  socket.on('get_messages', async (data: { conversationId: string; userId: string; limit?: number }) => {
+    try {
+      const { conversationId, userId, limit = 100 } = data;
+      console.log(`📨 Requesting messages for conversation: ${conversationId}`);
+      
+      // Get messages from database
+      const dbMessages = await Message.find({
+        conversationId: conversationId
+      })
+      .populate({
+        path: 'senderId',
+        select: 'id name avatar',
+        model: 'User'
+      })
+      .sort({ timestamp: 1 }) // Sort ascending (oldest first)
+      .limit(limit);
+
+      // Convert to format expected by client
+      const messagesList = dbMessages.map(msg => {
+        const sender = msg.senderId as any;
+        const senderId = sender?._id?.toString() || sender?.id || msg.senderId?.toString() || msg.senderId;
+        
+        return {
+          id: msg._id?.toString() || msg.id,
+          conversationId: msg.conversationId?.toString() || msg.conversationId,
+          senderId: senderId,
+          senderName: sender?.name || 'Unknown',
+          senderAvatar: sender?.avatar || '',
+          content: msg.content || '',
+          timestamp: msg.timestamp ? new Date(msg.timestamp) : new Date(),
+          status: (msg.status || 'sent') as 'sending' | 'sent' | 'delivered' | 'read',
+          replyTo: msg.replyTo?.toString() || msg.replyTo || null,
+          reactions: (msg.reactions || []).map((r: any) => ({
+            emoji: r.emoji,
+            userIds: r.userIds || [],
+            userNames: r.userNames || []
+          })),
+          edited: msg.edited || false,
+          attachments: msg.attachments || []
+        };
+      });
+
+      socket.emit('messages_list', messagesList);
+      console.log(`✅ Sent ${messagesList.length} messages for conversation ${conversationId}`);
+    } catch (error: any) {
+      console.error('Error getting messages:', error);
+      socket.emit('messages_list', []);
+    }
+  });
 
   // Join a conversation
   socket.on('join_conversation', (data) => {
@@ -302,6 +966,69 @@ io.on('connection', (socket) => {
     console.log(`✅ Message sent in conversation ${conversationId} by user ${message.senderId || message.senderName}: "${message.content.substring(0, 50)}..."`);
     console.log(`   Broadcasting to all users in room: ${conversationId}`);
     console.log(`   Total messages in conversation: ${messages.length}`);
+
+    // Send push notifications to users who are not currently viewing the conversation
+    // Get all participants in the conversation (excluding sender)
+    try {
+      const conversation = await Conversation.findById(conversationId).populate('participants');
+      if (conversation && conversation.participants) {
+        const participants = Array.isArray(conversation.participants) 
+          ? conversation.participants 
+          : [conversation.participants];
+        
+        // Get users currently in the conversation room (online and viewing)
+        const socketsInRoom = await io.in(conversationId).fetchSockets();
+        const onlineUserIds = new Set(
+          socketsInRoom.map(socket => {
+            const userInfo = activeUsers.get(socket.id);
+            return userInfo?.userId;
+          }).filter(Boolean)
+        );
+
+        // Send push notifications to offline users or users not viewing this conversation
+        for (const participant of participants) {
+          const participantId = participant._id?.toString() || participant.toString();
+          
+          // Skip sender
+          if (participantId === message.senderId) continue;
+          
+          // Skip if user is online and viewing this conversation
+          if (onlineUserIds.has(participantId)) continue;
+
+          // Get sender info
+          const sender = await User.findById(message.senderId);
+          const senderName = sender?.name || message.senderName || 'Unknown';
+          const senderAvatar = sender?.avatar || message.senderAvatar;
+
+          // Get message content
+          let messageContent = message.content || '';
+          if (message.attachments && message.attachments.length > 0) {
+            const attachment = message.attachments[0];
+            if (attachment.type === 'image') {
+              messageContent = '📷 صورة';
+            } else if (attachment.type === 'voice' || attachment.type === 'audio') {
+              messageContent = '🎤 رسالة صوتية';
+            } else if (attachment.type === 'file') {
+              messageContent = '📎 ملف';
+            } else if (attachment.type === 'location') {
+              messageContent = '📍 موقع';
+            }
+          }
+
+          // Send push notification
+          await sendMessageNotification(
+            participantId,
+            senderName,
+            messageContent,
+            conversationId,
+            senderAvatar,
+            'rtl'
+          );
+        }
+      }
+    } catch (error) {
+      console.error('Error sending push notifications:', error);
+    }
   });
 
   // Handle typing indicator
@@ -399,6 +1126,186 @@ io.on('connection', (socket) => {
       isTyping: data.isTyping,
       timestamp: new Date()
     });
+  });
+
+  // Handle pin/unpin conversation
+  socket.on('pin_conversation', async (data: { conversationId: string; userId: string; isPinned: boolean }) => {
+    try {
+      const { Conversation } = await import('./database.js');
+      const conversation = await Conversation.findById(data.conversationId);
+      
+      if (conversation) {
+        conversation.isPinned = data.isPinned;
+        conversation.updatedAt = new Date();
+        await conversation.save();
+        
+        // Notify all participants
+        socket.to(data.conversationId).emit('conversation_pinned', {
+          conversationId: data.conversationId,
+          isPinned: data.isPinned,
+          userId: data.userId
+        });
+        
+        socket.emit('conversation_pinned', {
+          conversationId: data.conversationId,
+          isPinned: data.isPinned,
+          userId: data.userId
+        });
+        
+        console.log(`✅ Conversation ${data.conversationId} ${data.isPinned ? 'pinned' : 'unpinned'}`);
+      }
+    } catch (error: any) {
+      console.error('Error pinning conversation:', error);
+    }
+  });
+
+  // Handle archive/unarchive conversation
+  socket.on('archive_conversation', async (data: { conversationId: string; userId: string; isArchived: boolean }) => {
+    try {
+      const { Conversation } = await import('./database.js');
+      const conversation = await Conversation.findById(data.conversationId);
+      
+      if (conversation) {
+        conversation.isArchived = data.isArchived;
+        conversation.updatedAt = new Date();
+        await conversation.save();
+        
+        // Notify all participants
+        socket.to(data.conversationId).emit('conversation_archived', {
+          conversationId: data.conversationId,
+          isArchived: data.isArchived,
+          userId: data.userId
+        });
+        
+        socket.emit('conversation_archived', {
+          conversationId: data.conversationId,
+          isArchived: data.isArchived,
+          userId: data.userId
+        });
+        
+        console.log(`✅ Conversation ${data.conversationId} ${data.isArchived ? 'archived' : 'unarchived'}`);
+      }
+    } catch (error: any) {
+      console.error('Error archiving conversation:', error);
+    }
+  });
+
+  // Handle create group
+  socket.on('create_group', async (data: { name: string; description: string; memberIds: string[]; creatorId: string }) => {
+    try {
+      const { Conversation, User } = await import('./database.js');
+      
+      // Get all participants including creator
+      const allMemberIds = [data.creatorId, ...data.memberIds];
+      const participants = await User.find({ _id: { $in: allMemberIds } });
+      
+      if (participants.length < 2) {
+        socket.emit('group_created', { success: false, error: 'At least 2 members required' });
+        return;
+      }
+
+      const conversation = new Conversation({
+        isGroup: true,
+        name: data.name,
+        avatar: '', // Can be set later
+        participants: participants.map(p => p._id),
+        createdAt: new Date(),
+        updatedAt: new Date()
+      });
+
+      await conversation.save();
+      await conversation.populate('participants');
+
+      // Notify all members
+      const groupData = {
+        id: conversation._id.toString(),
+        name: conversation.name,
+        isGroup: true,
+        participants: participants.map(p => ({
+          id: p._id.toString(),
+          name: p.name,
+          avatar: p.avatar,
+          status: p.status
+        })),
+        createdAt: conversation.createdAt
+      };
+
+      // Emit to all members
+      allMemberIds.forEach(memberId => {
+        io.to(memberId).emit('group_created', { success: true, conversation: groupData });
+      });
+
+      console.log(`✅ Group "${data.name}" created with ${participants.length} members`);
+    } catch (error: any) {
+      console.error('Error creating group:', error);
+      socket.emit('group_created', { success: false, error: error.message });
+    }
+  });
+
+  // Handle disappearing messages timer
+  socket.on('set_disappearing_timer', async (data: { conversationId: string; timer: number | null }) => {
+    try {
+      const { Conversation } = await import('./database.js');
+      const conversation = await Conversation.findById(data.conversationId);
+      
+      if (conversation) {
+        conversation.disappearingMessagesTimer = data.timer || 0;
+        conversation.updatedAt = new Date();
+        await conversation.save();
+        
+        // Notify all participants
+        socket.to(data.conversationId).emit('disappearing_timer_updated', {
+          conversationId: data.conversationId,
+          timer: data.timer
+        });
+        
+        socket.emit('disappearing_timer_updated', {
+          conversationId: data.conversationId,
+          timer: data.timer
+        });
+        
+        console.log(`✅ Disappearing timer set to ${data.timer || 0}s for conversation ${data.conversationId}`);
+      }
+    } catch (error: any) {
+      console.error('Error setting disappearing timer:', error);
+    }
+  });
+
+  // Handle scheduled message
+  socket.on('schedule_message', async (data: { 
+    conversationId: string; 
+    senderId: string; 
+    content: string; 
+    scheduledFor: Date;
+    attachments?: any[];
+  }) => {
+    try {
+      const { Message } = await import('./database.js');
+      
+      const message = new Message({
+        conversationId: data.conversationId,
+        senderId: data.senderId,
+        content: data.content,
+        scheduledFor: new Date(data.scheduledFor),
+        isScheduled: true,
+        status: 'sent',
+        timestamp: new Date(),
+        attachments: data.attachments || []
+      });
+
+      await message.save();
+      
+      socket.emit('message_scheduled', {
+        success: true,
+        messageId: message._id.toString(),
+        scheduledFor: message.scheduledFor
+      });
+      
+      console.log(`✅ Message scheduled for ${data.scheduledFor} in conversation ${data.conversationId}`);
+    } catch (error: any) {
+      console.error('Error scheduling message:', error);
+      socket.emit('message_scheduled', { success: false, error: error.message });
+    }
   });
 
   // Handle speaking (voice chat)

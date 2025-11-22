@@ -28,7 +28,6 @@ import { RoyalNameBar } from '../names/RoyalNameBar';
 import { FrameConfig } from '../frames/AnimatedFrames';
 import { NameEffectConfig } from '../names/AnimatedName';
 import { PremiumMembersList } from './PremiumMembersList';
-import { mazenAlalwiPortrait } from '../../../data/mazenPortrait';
 
 interface PremiumChatInterfaceProps {
   currentUser: User;
@@ -337,22 +336,8 @@ export function PremiumChatInterface({ currentUser, subscription }: PremiumChatI
       } as User & { isPremiumSubscriber?: boolean; rank?: number; customNameStyle?: any; selectedFrame?: any; frameConfig?: any });
     }
     
-    // Load saved members from admin, and add default owner (Mazen Alalwi)
+    // Load saved members from admin (real data only - no default owner)
     if (typeof window !== 'undefined') {
-      // Default owner: Mazen Alalwi (project owner)
-      // Use the actual portrait image from mockData.ts
-      const defaultOwner: User & { isPremiumSubscriber?: boolean; rank?: number; customNameStyle?: any; selectedFrame?: any; frameConfig?: any } = {
-        id: 'owner-mazen-alalwi',
-        name: 'Mazen Alalwi',
-        avatar: mazenAlalwiPortrait, // Actual portrait image from mockData.ts
-        status: 'online' as const,
-        isPremiumSubscriber: true,
-        rank: 0, // Owner rank (highest)
-        customNameStyle: undefined,
-        selectedFrame: undefined,
-        frameConfig: undefined
-      };
-
       const savedMembers = localStorage.getItem('premium_members');
       if (savedMembers) {
         try {
@@ -372,15 +357,15 @@ export function PremiumChatInterface({ currentUser, subscription }: PremiumChatI
               backgroundImage: m.backgroundImage,
               backgroundGradient: m.backgroundGradient
             }));
-          // Add default owner first, then admin members, then initial members
-          setMembers([defaultOwner, ...initialMembers, ...activeAdminMembers]);
+          // Add admin members and initial members (real data only)
+          setMembers([...initialMembers, ...activeAdminMembers]);
         } catch (error) {
           console.error('Error loading admin members:', error);
-          setMembers([defaultOwner, ...initialMembers]);
+          setMembers(initialMembers);
         }
       } else {
-        // Add default owner
-        setMembers([defaultOwner, ...initialMembers]);
+        // No saved members - just initial members (current user)
+        setMembers(initialMembers);
       }
     } else {
       // On server side, just add initial members

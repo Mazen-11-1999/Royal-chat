@@ -9,10 +9,12 @@ export interface AdminPermissions {
   canViewStatistics: boolean;
   canManageSettings: boolean;
   canAccessDatabase: boolean;
+  canGrantFreeSubscription: boolean;
 }
 
 export interface AdminUser {
   id: string;
+  userId?: string;
   name: string;
   username: string;
   role: 'admin' | 'owner' | 'user';
@@ -35,10 +37,10 @@ interface AuthContextType {
   setInvisible: (invisible: boolean) => void;
   updateName: (name: string) => void;
   // Admin management functions (only for owner)
-  createAdmin: (adminData: { username: string; password: string; name: string; permissions: AdminPermissions }) => Promise<boolean>;
+  createAdmin: (adminData: { username: string; password: string; name: string; permissions: AdminPermissions; userId: string }) => Promise<boolean>;
   getAdmins: () => AdminUser[];
   updateAdmin: (adminId: string, updates: Partial<AdminUser>) => Promise<boolean>;
-  deleteAdmin: (adminId: string) => boolean;
+  deleteAdmin: (adminId: string) => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -60,7 +62,8 @@ const OWNER_PERMISSIONS: AdminPermissions = {
   canAccessPremiumChat: true,
   canViewStatistics: true,
   canManageSettings: true,
-  canAccessDatabase: true
+  canAccessDatabase: true,
+  canGrantFreeSubscription: true
 };
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -74,20 +77,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Don't auto-load saved admin user from localStorage
     // Owner must explicitly login every time
     if (typeof window !== 'undefined') {
-      // Load admins list (still needed for admin management)
-      const savedAdmins = localStorage.getItem(STORAGE_KEYS.ADMIN_LIST);
-      if (savedAdmins) {
-        try {
-          setAdmins(JSON.parse(savedAdmins));
-        } catch (error) {
-          console.error('Error parsing saved admins:', error);
-        }
-      }
-      
       // Always require login - don't auto-load saved admin user
-      // Clear saved admin user to force login
-      // localStorage.removeItem(STORAGE_KEYS.ADMIN_USER); // Uncomment if you want to clear saved data
-      
       // Always show login page
       setUser(null);
       setIsAuthenticated(false);
@@ -97,62 +87,54 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  // Load admins when owner is authenticated
+  useEffect(() => {
+    if (user && user.role === 'owner' && user.userId) {
+      loadAdminsFromAPI();
+    }
+  }, [user]);
+
   const login = async (username: string, password: string): Promise<boolean> => {
     // Trim inputs to handle accidental spaces
     const trimmedUsername = username.trim();
     const trimmedPassword = password.trim();
     
-    // Check owner credentials
-    if (trimmedUsername === ADMIN_CREDENTIALS.username && trimmedPassword === ADMIN_CREDENTIALS.password) {
-      const adminUser: AdminUser = {
-        id: 'owner-1',
-        name: 'المالك',
-        username: 'admin',
-        role: 'owner',
-        isInvisible: true, // Default to invisible
-        avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=admin',
-        status: 'invisible',
-        permissions: OWNER_PERMISSIONS,
-        isOwner: true
-      };
-      setUser(adminUser);
-      setIsAuthenticated(true);
-      if (typeof window !== 'undefined') {
-        localStorage.setItem(STORAGE_KEYS.ADMIN_USER, JSON.stringify(adminUser));
-      }
-      return true;
-    }
-    
-    // Check other admins
-    if (typeof window !== 'undefined') {
-      const savedAdmins = localStorage.getItem(STORAGE_KEYS.ADMIN_LIST);
-      if (savedAdmins) {
-        try {
-          const adminsList = JSON.parse(savedAdmins) as Array<AdminUser & { password: string }>;
-          const foundAdmin = adminsList.find(a => a.username.trim() === trimmedUsername && a.password === trimmedPassword);
-          if (foundAdmin) {
-            const { password: _, ...adminUser } = foundAdmin;
-            const userToLogin: AdminUser = {
-              ...adminUser,
-              role: 'admin',
-              permissions: adminUser.permissions || {
-                canManageUsers: false,
-                canManageAdmins: false,
-                canAccessPremiumChat: true,
-                canViewStatistics: false,
-                canManageSettings: false,
-                canAccessDatabase: false
-              }
-            };
-            setUser(userToLogin);
-            setIsAuthenticated(true);
-            localStorage.setItem(STORAGE_KEYS.ADMIN_USER, JSON.stringify(userToLogin));
-            return true;
+    try {
+      // Use API for authentication
+      const response = await fetch('/api/admin/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          username: trimmedUsername,
+          password: trimmedPassword
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.admin) {
+          const adminUser: AdminUser = {
+            id: data.admin.id,
+            userId: data.admin.userId,
+            name: data.admin.name,
+            username: data.admin.username,
+            role: data.admin.role as 'owner' | 'admin',
+            isInvisible: true, // Default to invisible
+            avatar: data.admin.user?.avatar || 'https://api.dicebear.com/7.x/avataaars/svg?seed=admin',
+            status: 'invisible',
+            permissions: data.admin.permissions || OWNER_PERMISSIONS,
+            isOwner: data.admin.role === 'owner'
+          };
+          setUser(adminUser);
+          setIsAuthenticated(true);
+          if (typeof window !== 'undefined') {
+            localStorage.setItem(STORAGE_KEYS.ADMIN_USER, JSON.stringify(adminUser));
           }
-        } catch (error) {
-          console.error('Error checking admin credentials:', error);
+          return true;
         }
       }
+    } catch (error) {
+      console.error('Error during login:', error);
     }
     
     return false;
@@ -179,75 +161,130 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const createAdmin = async (adminData: { username: string; password: string; name: string; permissions: AdminPermissions }): Promise<boolean> => {
-    if (!user || user.role !== 'owner') {
+  const loadAdminsFromAPI = async () => {
+    if (!user || user.role !== 'owner' || !user.userId) return;
+    
+    try {
+      const response = await fetch(`/api/admin/admins?ownerId=${user.userId}`);
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.admins) {
+          const adminsList = data.admins.map((admin: any) => ({
+            id: admin.id,
+            userId: admin.userId,
+            name: admin.name,
+            username: admin.username,
+            role: admin.role,
+            isInvisible: false,
+            avatar: admin.user?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${admin.username}`,
+            status: 'offline' as const,
+            permissions: admin.permissions,
+            isOwner: admin.role === 'owner'
+          }));
+          setAdmins(adminsList);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading admins:', error);
+    }
+  };
+
+  const createAdmin = async (adminData: { username: string; password: string; name: string; permissions: AdminPermissions; userId: string }): Promise<boolean> => {
+    if (!user || user.role !== 'owner' || !user.userId) {
       return false;
     }
 
-    const newAdmin: AdminUser & { password: string } = {
-      id: `admin-${Date.now()}`,
-      name: adminData.name,
-      username: adminData.username,
-      password: adminData.password,
-      role: 'admin',
-      isInvisible: false,
-      avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${adminData.username}`,
-      status: 'offline',
-      permissions: adminData.permissions
-    };
+    try {
+      const response = await fetch('/api/admin/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ownerId: user.userId,
+          username: adminData.username,
+          password: adminData.password,
+          name: adminData.name,
+          userId: adminData.userId,
+          permissions: adminData.permissions
+        })
+      });
 
-    const updatedAdmins = [...admins, newAdmin];
-    setAdmins(updatedAdmins);
-    
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(STORAGE_KEYS.ADMIN_LIST, JSON.stringify(updatedAdmins));
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          // Reload admins list
+          await loadAdminsFromAPI();
+          return true;
+        }
+      }
+    } catch (error) {
+      console.error('Error creating admin:', error);
     }
     
-    return true;
+    return false;
   };
 
   const getAdmins = (): AdminUser[] => {
-    return admins.map(admin => {
-      const adminWithPassword = admin as AdminUser & { password?: string };
-      const { password: _, ...adminWithoutPassword } = adminWithPassword;
-      return adminWithoutPassword as AdminUser;
-    });
+    return admins;
   };
 
   const updateAdmin = async (adminId: string, updates: Partial<AdminUser>): Promise<boolean> => {
-    if (!user || user.role !== 'owner') {
+    if (!user || user.role !== 'owner' || !user.userId) {
       return false;
     }
 
-    const updatedAdmins = admins.map(admin => {
-      if (admin.id === adminId) {
-        return { ...admin, ...updates };
-      }
-      return admin;
-    });
+    try {
+      // Update permissions if provided
+      if (updates.permissions) {
+        const response = await fetch(`/api/admin/${adminId}/permissions`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            ownerId: user.userId,
+            permissions: updates.permissions
+          })
+        });
 
-    setAdmins(updatedAdmins);
-    
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(STORAGE_KEYS.ADMIN_LIST, JSON.stringify(updatedAdmins));
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success) {
+            loadAdminsFromAPI();
+            return true;
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error updating admin:', error);
     }
     
-    return true;
+    return false;
   };
 
-  const deleteAdmin = (adminId: string): boolean => {
-    if (!user || user.role !== 'owner') {
+  const deleteAdmin = async (adminId: string): Promise<boolean> => {
+    if (!user || user.role !== 'owner' || !user.userId) {
       return false;
     }
 
-    const updatedAdmins = admins.filter(admin => admin.id !== adminId);
-    setAdmins(updatedAdmins);
-    
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(STORAGE_KEYS.ADMIN_LIST, JSON.stringify(updatedAdmins));
+    try {
+      const response = await fetch(`/api/admin/${adminId}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ownerId: user.userId
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          await loadAdminsFromAPI();
+          return true;
+        }
+      }
+    } catch (error) {
+      console.error('Error deleting admin:', error);
     }
     
-    return true;
+    return false;
   };
 
   const toggleInvisibility = () => {

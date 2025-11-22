@@ -9,11 +9,10 @@ node_modules/
 # Next.js
 /.next/
 /out/
-/build
-/dist
 
 # Production
 /build
+/dist
 
 # Misc
 .DS_Store
@@ -27,6 +26,9 @@ yarn-error.log*
 # Local env files
 .env*.local
 .env
+.env.development.local
+.env.test.local
+.env.production.local
 
 # Vercel
 .vercel
@@ -36,24 +38,28 @@ yarn-error.log*
 next-env.d.ts
 
 # IDE
-.idea/
 .vscode/
+.idea/
 *.swp
 *.swo
 *~
 
 # OS
 Thumbs.db
+.DS_Store
 
-# Development scripts (not needed for deployment)
-convert-image.*
-fix-mockdata.*
-update-mockdata.*
-final-fix.*
-start-emulator.*
-image-base64.txt
+# Logs
+logs
+*.log
 
-# Old/unused server files
-# server/index.ts (kept for reference, but not used - we use server-custom.mjs)
-# admin-server.js (kept for reference, but not used in Railway)
+# Database
+*.db
+*.sqlite
 
+# Build outputs
+*.map
+.cache/
+
+# Temporary files
+tmp/
+temp/

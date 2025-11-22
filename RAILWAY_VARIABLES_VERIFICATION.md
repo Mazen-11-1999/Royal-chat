@@ -34,7 +34,7 @@ const wsUrl = process.env.NEXT_PUBLIC_WS_URL ||
   (typeof window !== 'undefined' 
     ? (window.location.protocol === 'https:' ? 'wss://' : 'ws://') + window.location.host
     : 'ws://localhost:8080');
-```
+``` 
 - ✅ يستخدم `NEXT_PUBLIC_WS_URL` إذا كان موجودًا ✅
 - ✅ إذا لم يكن موجودًا، يستخدم `wss://` تلقائيًا من `window.location`
 - ✅ **كل شيء صحيح**

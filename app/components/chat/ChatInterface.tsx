@@ -12,6 +12,7 @@ import { ChatHeader } from './ChatHeader';
 import { MessageInput } from '../../MessageInput';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { NotificationService } from '../../services/NotificationService';
+import { MessageSearch } from './MessageSearch';
 
 interface ChatInterfaceProps {
   conversation: AppConversation | Conversation;
@@ -37,6 +38,9 @@ export function ChatInterface({
   const { socket } = useWebSocket();
   const { dir } = useLanguage();
   const [typingUsers, setTypingUsers] = useState<Set<string>>(new Set());
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isMediaGalleryOpen, setIsMediaGalleryOpen] = useState(false);
+  const [highlightedMessageId, setHighlightedMessageId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!socket) return;
@@ -210,11 +214,31 @@ export function ChatInterface({
     // Listen for message reactions
     socket.on('message_reaction', handleMessageReaction);
 
+    // Listen for conversation pin/archive updates
+    const handleConversationPinned = (data: { conversationId: string; isPinned: boolean }) => {
+      if (data.conversationId === conversation.id) {
+        // Update conversation in parent component
+        // This will be handled by the parent component
+      }
+    };
+
+    const handleConversationArchived = (data: { conversationId: string; isArchived: boolean }) => {
+      if (data.conversationId === conversation.id) {
+        // Update conversation in parent component
+        // This will be handled by the parent component
+      }
+    };
+
+    socket.on('conversation_pinned', handleConversationPinned);
+    socket.on('conversation_archived', handleConversationArchived);
+
     return () => {
       socket.off('receive_message', handleReceiveMessage);
       socket.off('conversation_history', handleConversationHistory);
       socket.off('user_typing', handleUserTyping);
       socket.off('message_reaction', handleMessageReaction);
+      socket.off('conversation_pinned', handleConversationPinned);
+      socket.off('conversation_archived', handleConversationArchived);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [socket, conversation.id, currentUser.id]);
@@ -414,9 +438,63 @@ export function ChatInterface({
     } as MessageFromTypes;
   });
 
+  const handleSelectMessage = (messageId: string) => {
+    setHighlightedMessageId(messageId);
+    // Scroll to message
+    setTimeout(() => {
+      const element = document.getElementById(`message-${messageId}`);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+      // Remove highlight after 3 seconds
+      setTimeout(() => setHighlightedMessageId(null), 3000);
+    }, 100);
+  };
+
   return (
     <Card className="flex flex-col h-full w-full min-w-0 rounded-none border-0 overflow-hidden" dir={dir}>
-      <ChatHeader conversation={appConversation} currentUser={appUser} onBack={onBack} />
+      <ChatHeader 
+        conversation={appConversation} 
+        currentUser={appUser} 
+        onBack={onBack}
+        onSearchClick={() => setIsSearchOpen(true)}
+        onPinToggle={(conversationId) => {
+          if (socket) {
+            socket.emit('pin_conversation', {
+              conversationId,
+              userId: appUser.id,
+              isPinned: !appConversation.isPinned
+            });
+          }
+        }}
+        onArchive={(conversationId) => {
+          if (socket) {
+            socket.emit('archive_conversation', {
+              conversationId,
+              userId: appUser.id,
+              isArchived: !appConversation.isArchived
+            });
+          }
+        }}
+        onMediaGalleryClick={() => setIsMediaGalleryOpen(true)}
+      />
+      
+      {/* Message Search Dialog */}
+      <MessageSearch
+        messages={appMessages}
+        isOpen={isSearchOpen}
+        onClose={() => setIsSearchOpen(false)}
+        onSelectMessage={handleSelectMessage}
+        currentUserId={appUser.id}
+      />
+
+      {/* Media Gallery Dialog */}
+      <MediaGallery
+        messages={appMessages}
+        isOpen={isMediaGalleryOpen}
+        onClose={() => setIsMediaGalleryOpen(false)}
+        onSelectMessage={handleSelectMessage}
+      />
 
       <ScrollArea 
         className="flex-1 p-2 sm:p-4 min-h-0 overflow-y-auto touch-manipulation" 
@@ -444,9 +522,13 @@ export function ChatInterface({
             const replyToMessage = message.replyTo ? appMessages.find(m => m.id === message.replyTo) : undefined;
 
             return (
-              <MessageBubble
+              <div
                 key={message.id}
-                message={message}
+                id={`message-${message.id}`}
+                className={highlightedMessageId === message.id ? "ring-4 ring-yellow-400 rounded-lg animate-pulse p-1" : ""}
+              >
+                <MessageBubble
+                  message={message}
                 sender={typeof sender === 'string' ? appUser : sender as UserFromTypes}
                 isCurrentUser={isCurrentUser}
                 onReply={handleReply}

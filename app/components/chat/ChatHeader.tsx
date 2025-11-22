@@ -10,7 +10,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/ui/dropdown-menu';
-import { Search, Phone, Video, MoreVertical, Pin, Archive, Trash2, Users, ArrowLeft } from 'lucide-react';
+import { Search, Phone, Video, MoreVertical, Pin, Archive, Trash2, Users, ArrowLeft, Image as ImageIcon, Clock, Calendar } from 'lucide-react';
 import { Conversation, User } from '@/types/chat';
 import { cn } from '@/lib/utils';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -21,9 +21,14 @@ interface ChatHeaderProps {
   conversation: Conversation;
   currentUser: User;
   onBack?: () => void;
+  onSearchClick?: () => void;
+  onPinToggle?: (conversationId: string) => void;
+  onArchive?: (conversationId: string) => void;
+  onMediaGalleryClick?: () => void;
+  onDisappearingMessagesClick?: () => void;
 }
 
-export function ChatHeader({ conversation, currentUser, onBack }: ChatHeaderProps) {
+export function ChatHeader({ conversation, currentUser, onBack, onSearchClick, onPinToggle, onArchive, onMediaGalleryClick, onDisappearingMessagesClick }: ChatHeaderProps) {
   const { t, dir } = useLanguage();
   const [isVoiceCallOpen, setIsVoiceCallOpen] = useState(false);
   const [isVideoCallOpen, setIsVideoCallOpen] = useState(false);
@@ -75,9 +80,10 @@ export function ChatHeader({ conversation, currentUser, onBack }: ChatHeaderProp
   const isOnline = typeof otherUser !== 'string' && otherUser && typeof otherUser === 'object' && otherUser.status === 'online';
 
   // Get caller info for calls
+  const otherUserId = typeof otherUser === 'string' ? otherUser : otherUser?.id;
   const caller = typeof otherUserId === 'string' 
-    ? { id: otherUserId, name: otherUserId, avatar: displayAvatar || '' }
-    : { id: otherUserId?.id || '', name: displayName || '', avatar: displayAvatar || '' };
+    ? { id: otherUserId, name: displayName || '', avatar: displayAvatar || '' }
+    : { id: otherUserId || '', name: displayName || '', avatar: displayAvatar || '' };
 
   return (
     <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-20" dir={dir}>
@@ -117,7 +123,7 @@ export function ChatHeader({ conversation, currentUser, onBack }: ChatHeaderProp
                 'text-[10px] sm:text-xs truncate',
                 isOnline ? 'text-green-600 font-medium' : 'text-muted-foreground'
               )}>
-                {t(`status.${typeof otherUserId !== 'string' && otherUserId?.status ? otherUserId.status : 'offline'}`)}
+                {isOnline ? (dir === 'rtl' ? 'أونلاين' : 'Online') : (dir === 'rtl' ? 'أوفلاين' : 'Offline')}
               </p>
             ) : (
               <div className="flex items-center gap-1 text-[10px] sm:text-xs text-muted-foreground">
@@ -135,6 +141,7 @@ export function ChatHeader({ conversation, currentUser, onBack }: ChatHeaderProp
             variant="ghost" 
             className="rounded-full h-10 w-10 sm:h-9 sm:w-9 touch-manipulation min-h-[44px] min-w-[44px]" 
             title={t('common.search')}
+            onClick={onSearchClick}
             style={{ WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation' }}
           >
             <Search className="w-5 h-5 sm:w-4 sm:h-4" />
@@ -180,14 +187,33 @@ export function ChatHeader({ conversation, currentUser, onBack }: ChatHeaderProp
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align={dir === 'rtl' ? 'start' : 'end'} className="w-56">
-              <DropdownMenuItem>
-                <Pin className={`w-4 h-4 ${dir === 'rtl' ? 'ml-2' : 'mr-2'}`} />
-                {conversation.isPinned ? t('actions.unpin') : t('actions.pin')} {dir === 'rtl' ? 'المحادثة' : 'Conversation'}
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <Archive className={`w-4 h-4 ${dir === 'rtl' ? 'ml-2' : 'mr-2'}`} />
-                {t('actions.archive')} {dir === 'rtl' ? 'المحادثة' : 'Conversation'}
-              </DropdownMenuItem>
+              {onMediaGalleryClick && (
+                <>
+                  <DropdownMenuItem onClick={onMediaGalleryClick}>
+                    <ImageIcon className={`w-4 h-4 ${dir === 'rtl' ? 'ml-2' : 'mr-2'}`} />
+                    {dir === 'rtl' ? 'معرض الوسائط' : 'Media Gallery'}
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                </>
+              )}
+              {onDisappearingMessagesClick && (
+                <DropdownMenuItem onClick={onDisappearingMessagesClick}>
+                  <Clock className={`w-4 h-4 ${dir === 'rtl' ? 'ml-2' : 'mr-2'}`} />
+                  {dir === 'rtl' ? 'رسائل تختفي تلقائياً' : 'Disappearing Messages'}
+                </DropdownMenuItem>
+              )}
+              {onPinToggle && (
+                <DropdownMenuItem onClick={() => onPinToggle(conversation.id)}>
+                  <Pin className={`w-4 h-4 ${dir === 'rtl' ? 'ml-2' : 'mr-2'}`} />
+                  {conversation.isPinned ? t('actions.unpin') : t('actions.pin')} {dir === 'rtl' ? 'المحادثة' : 'Conversation'}
+                </DropdownMenuItem>
+              )}
+              {onArchive && (
+                <DropdownMenuItem onClick={() => onArchive(conversation.id)}>
+                  <Archive className={`w-4 h-4 ${dir === 'rtl' ? 'ml-2' : 'mr-2'}`} />
+                  {t('actions.archive')} {dir === 'rtl' ? 'المحادثة' : 'Conversation'}
+                </DropdownMenuItem>
+              )}
               <DropdownMenuSeparator />
               <DropdownMenuItem className="text-destructive focus:text-destructive">
                 <Trash2 className={`w-4 h-4 ${dir === 'rtl' ? 'ml-2' : 'mr-2'}`} />

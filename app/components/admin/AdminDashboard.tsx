@@ -42,12 +42,13 @@ import { useRouter } from 'next/navigation';
 import { AdvertisementManager } from './AdvertisementManager';
 import { MembersManager } from './MembersManager';
 import { FrameManager } from './FrameManager';
+import { UsersManager } from './UsersManager';
 
 export function AdminDashboard() {
   const { user, logout, toggleInvisibility, setInvisible, updateName, isOwner, createAdmin, getAdmins, updateAdmin, deleteAdmin } = useAuth();
   const { dir } = useLanguage();
   const router = useRouter();
-  const [activeSection, setActiveSection] = useState<'dashboard' | 'chat' | 'settings' | 'advertisements' | 'members' | 'frames'>('dashboard');
+  const [activeSection, setActiveSection] = useState<'dashboard' | 'chat' | 'settings' | 'advertisements' | 'members' | 'frames' | 'users'>('dashboard');
   const [stats, setStats] = useState({
     totalUsers: 1234,
     premiumUsers: 567,
@@ -66,13 +67,15 @@ export function AdminDashboard() {
     username: '',
     password: '',
     name: '',
+    userId: '',
     permissions: {
       canManageUsers: false,
       canManageAdmins: false,
       canAccessPremiumChat: true,
       canViewStatistics: false,
       canManageSettings: false,
-      canAccessDatabase: false
+      canAccessDatabase: false,
+      canGrantFreeSubscription: false
     } as AdminPermissions
   });
 
@@ -136,7 +139,7 @@ export function AdminDashboard() {
   };
 
   const handleCreateAdmin = async () => {
-    if (newAdminData.username && newAdminData.password && newAdminData.name) {
+    if (newAdminData.username && newAdminData.password && newAdminData.name && newAdminData.userId) {
       const success = await createAdmin(newAdminData);
       if (success) {
         setAdmins(getAdmins());
@@ -145,23 +148,27 @@ export function AdminDashboard() {
           username: '',
           password: '',
           name: '',
+          userId: '',
           permissions: {
             canManageUsers: false,
             canManageAdmins: false,
             canAccessPremiumChat: true,
             canViewStatistics: false,
             canManageSettings: false,
-            canAccessDatabase: false
+            canAccessDatabase: false,
+            canGrantFreeSubscription: false
           }
         });
       }
     }
   };
 
-  const handleDeleteAdmin = (adminId: string) => {
+  const handleDeleteAdmin = async (adminId: string) => {
     if (confirm(dir === 'rtl' ? 'هل أنت متأكد من حذف هذا الأدمن؟' : 'Are you sure you want to delete this admin?')) {
-      deleteAdmin(adminId);
-      setAdmins(getAdmins());
+      const success = await deleteAdmin(adminId);
+      if (success) {
+        setAdmins(getAdmins());
+      }
     }
   };
 
@@ -451,11 +458,14 @@ export function AdminDashboard() {
                 </Button>
 
                 <Button
-                  variant="outline"
-                  className="h-auto py-4 flex flex-col items-center gap-2 border-2 border-primary/20 hover:border-primary transition-all duration-300 hover:scale-105"
+                  onClick={() => setActiveSection('users')}
+                  className="h-auto py-4 flex flex-col items-center gap-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700 transition-all duration-300 hover:scale-105"
                 >
-                  <Users className="w-6 h-6 text-primary" />
+                  <Users className="w-6 h-6" />
                   <span>{dir === 'rtl' ? 'إدارة المستخدمين' : 'Manage Users'}</span>
+                  <Badge variant="secondary" className="bg-white/20 text-white">
+                    {dir === 'rtl' ? 'إدارة' : 'Manage'}
+                  </Badge>
                 </Button>
 
                 <Button
@@ -578,6 +588,20 @@ export function AdminDashboard() {
                             dir={dir}
                           />
                         </div>
+                        <div className="space-y-2">
+                          <Label>{dir === 'rtl' ? 'معرف المستخدم (User ID)' : 'User ID'}</Label>
+                          <Input
+                            value={newAdminData.userId}
+                            onChange={(e) => setNewAdminData({ ...newAdminData, userId: e.target.value })}
+                            placeholder={dir === 'rtl' ? 'أدخل معرف المستخدم من قاعدة البيانات' : 'Enter user ID from database'}
+                            dir={dir}
+                          />
+                          <p className="text-xs text-muted-foreground">
+                            {dir === 'rtl' 
+                              ? 'معرف المستخدم الذي سيصبح أدمن (يجب أن يكون موجوداً في قاعدة البيانات)'
+                              : 'User ID that will become admin (must exist in database)'}
+                          </p>
+                        </div>
                         <div className="space-y-3">
                           <Label>{dir === 'rtl' ? 'الصلاحيات' : 'Permissions'}</Label>
                           <div className="space-y-2">
@@ -652,6 +676,18 @@ export function AdminDashboard() {
                                 }
                               />
                               <Label className="text-sm">{dir === 'rtl' ? 'الوصول لقاعدة البيانات' : 'Access Database'}</Label>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Switch
+                                checked={newAdminData.permissions.canGrantFreeSubscription}
+                                onCheckedChange={(checked) =>
+                                  setNewAdminData({
+                                    ...newAdminData,
+                                    permissions: { ...newAdminData.permissions, canGrantFreeSubscription: checked }
+                                  })
+                                }
+                              />
+                              <Label className="text-sm">{dir === 'rtl' ? 'منح الاشتراك المجاني' : 'Grant Free Subscription'}</Label>
                             </div>
                           </div>
                         </div>
@@ -836,6 +872,31 @@ export function AdminDashboard() {
           </div>
           <ScrollArea className="flex-1">
             <FrameManager />
+          </ScrollArea>
+        </div>
+      )}
+
+      {activeSection === 'users' && (
+        <div className="flex-1 flex flex-col h-full" dir={dir}>
+          <div className="border-b bg-gradient-to-r from-primary/10 via-background to-primary/10 p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Users className="w-6 h-6 text-primary" />
+                <h2 className="text-xl font-bold">
+                  {dir === 'rtl' ? 'إدارة المستخدمين' : 'Users Management'}
+                </h2>
+              </div>
+              <Button
+                variant="outline"
+                onClick={() => setActiveSection('dashboard')}
+                className="transition-all duration-300 hover:scale-110"
+              >
+                {dir === 'rtl' ? 'العودة للوحة التحكم' : 'Back to Dashboard'}
+              </Button>
+            </div>
+          </div>
+          <ScrollArea className="flex-1 p-6">
+            <UsersManager />
           </ScrollArea>
         </div>
       )}

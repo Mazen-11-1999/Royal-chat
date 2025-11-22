@@ -35,7 +35,36 @@ export function PremiumChatPage({ currentUser }: PremiumChatPageProps) {
         setIsLoading(false);
         return;
       }
-      // In a real app, this would be an API call
+      
+      // Check for free subscription from API
+      try {
+        const freeSubResponse = await fetch(`/api/subscription/free/${currentUser.id}`);
+        if (freeSubResponse.ok) {
+          const freeSubData = await freeSubResponse.json();
+          if (freeSubData.success && freeSubData.hasFreeSubscription) {
+            const freeSubscription: Subscription = {
+              id: freeSubData.subscription.id,
+              userId: currentUser.id,
+              status: 'active',
+              plan: 'lifetime',
+              amount: 0,
+              currency: 'USD',
+              purchaseDate: new Date(),
+              paymentMethod: 'free',
+              paymentId: 'free-subscription',
+              transactionId: 'free-subscription'
+            };
+            setSubscription(freeSubscription);
+            setShowWelcome(false);
+            setIsLoading(false);
+            return;
+          }
+        }
+      } catch (error) {
+        console.error('Error checking free subscription:', error);
+      }
+      
+      // Check localStorage as fallback
       const savedSubscription = localStorage.getItem(`subscription_${currentUser.id}`);
       if (savedSubscription) {
         const sub = JSON.parse(savedSubscription);

@@ -5,6 +5,7 @@ import dynamic from 'next/dynamic';
 import { Sidebar } from './components/Sidebar';
 import { ConversationsList } from './components/chat/ConversationsList';
 import { ChatInterface } from './components/chat/ChatInterface';
+import { MessageSquare, Users, Settings, Crown } from 'lucide-react';
 
 const SettingsPage = dynamic(() => import('./settings/SettingsPage').then(mod => ({ default: mod.SettingsPage })), { ssr: false });
 const SelectConversationMessage = dynamic(() => import('./components/chat/SelectConversationMessage').then(mod => ({ default: mod.SelectConversationMessage })), { ssr: false });
@@ -99,6 +100,29 @@ function App() {
     }
   }, [loggedInUser?.name, loggedInUser?.avatar]);
 
+  // Initialize Service Worker and Push Notifications when user logs in
+  useEffect(() => {
+    if (currentUser && currentUser.id) {
+      // Set user ID for notifications
+      NotificationService.setUserId(currentUser.id);
+      
+      // Initialize Service Worker and subscribe to push notifications
+      if (NotificationService.isPushSupported()) {
+        NotificationService.initialize(currentUser.id)
+          .then((success) => {
+            if (success) {
+              console.log('✅ Push notifications initialized for user:', currentUser.id);
+            } else {
+              console.warn('⚠️ Failed to initialize push notifications');
+            }
+          })
+          .catch((error) => {
+            console.error('❌ Error initializing push notifications:', error);
+          });
+      }
+    }
+  }, [currentUser?.id]);
+
   // Get WebSocket and language context
   const { socket } = useWebSocket();
   const { dir } = useLanguage();
@@ -123,15 +147,116 @@ function App() {
     // Listen for conversations list
     const handleConversationsList = (conversationsList: any[]) => {
       const convertedConversations = conversationsList.map(conv => toConversation(conv));
-      setConversations(convertedConversations);
+      // Sort conversations by last message time (most recent first)
+      const sortedConversations = convertedConversations.sort((a, b) => {
+        const timeA = a.lastMessageTime?.getTime() || a.createdAt?.getTime() || 0;
+        const timeB = b.lastMessageTime?.getTime() || b.createdAt?.getTime() || 0;
+        return timeB - timeA;
+      });
+      setConversations(sortedConversations);
     };
 
     socket.on('conversations_list', handleConversationsList);
 
+    // Handle conversation pin/archive updates
+    const handleConversationPinned = (data: { conversationId: string; isPinned: boolean }) => {
+      setConversations(prev => prev.map(conv => 
+        conv.id === data.conversationId 
+          ? { ...conv, isPinned: data.isPinned }
+          : conv
+      ));
+    };
+
+    const handleConversationArchived = (data: { conversationId: string; isArchived: boolean }) => {
+      setConversations(prev => prev.map(conv => 
+        conv.id === data.conversationId 
+          ? { ...conv, isArchived: data.isArchived }
+          : conv
+      ));
+    };
+
+    socket.on('conversation_pinned', handleConversationPinned);
+    socket.on('conversation_archived', handleConversationArchived);
+
     return () => {
       socket.off('conversations_list', handleConversationsList);
+      socket.off('conversation_pinned', handleConversationPinned);
+      socket.off('conversation_archived', handleConversationArchived);
     };
   }, [socket, currentUser]);
+
+  // Load messages for selected conversation
+  useEffect(() => {
+    if (!socket || !currentUser || !selectedConversationId) {
+      // Clear messages when no conversation is selected
+      setMessages([]);
+      return;
+    }
+
+    // Request messages for this conversation
+    socket.emit('get_messages', { 
+      conversationId: selectedConversationId,
+      userId: currentUser.id,
+      limit: 100
+    });
+
+    // Listen for messages
+    const handleMessages = (messagesList: any[]) => {
+      console.log(`📨 Received ${messagesList.length} messages for conversation ${selectedConversationId}`);
+      const convertedMessages = messagesList.map(msg => {
+        try {
+          return toMessage(msg);
+        } catch (error) {
+          console.error('Error converting message:', error, msg);
+          return null;
+        }
+      }).filter((msg): msg is Message => msg !== null);
+      
+      // Filter messages for this conversation and sort by timestamp
+      const conversationMessages = convertedMessages
+        .filter(m => m.conversationId === selectedConversationId)
+        .sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
+      
+      // Replace all messages for this conversation (not merge)
+      setMessages(prev => {
+        const otherMessages = prev.filter(m => m.conversationId !== selectedConversationId);
+        return [...otherMessages, ...conversationMessages].sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
+      });
+    };
+
+    const handleNewMessage = (message: any) => {
+      if (message.conversationId === selectedConversationId) {
+        try {
+          const convertedMessage = toMessage(message);
+          setMessages(prev => {
+            // Avoid duplicates
+            if (prev.some(m => m.id === convertedMessage.id)) {
+              return prev;
+            }
+            return [...prev, convertedMessage].sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
+          });
+        } catch (error) {
+          console.error('Error converting new message:', error, message);
+        }
+      }
+    };
+
+    socket.on('messages_list', handleMessages);
+    socket.on('receive_message', handleNewMessage);
+    socket.on('new_message', handleNewMessage);
+    socket.on('conversation_history', (data: { conversationId: string; messages: any[] }) => {
+      if (data.conversationId === selectedConversationId) {
+        handleMessages(data.messages);
+      }
+    });
+
+    return () => {
+      socket.off('messages_list', handleMessages);
+      socket.off('receive_message', handleNewMessage);
+      socket.off('new_message', handleNewMessage);
+      socket.off('conversation_history', handleMessages);
+    };
+  }, [socket, currentUser, selectedConversationId]);
 
   // Listen for messages from all conversations for notifications
   useEffect(() => {
@@ -212,8 +337,8 @@ function App() {
 
     setMessages(prev => [...prev, newMessage]);
 
-    setConversations(prev => 
-      prev.map(conv => 
+    setConversations(prev => {
+      const updated = prev.map(conv => 
         conv.id === selectedConversationId 
           ? { 
               ...conv, 
@@ -221,11 +346,24 @@ function App() {
               lastMessageTime: newMessage.timestamp
             } 
           : conv
-      )
-    );
+      );
+      // Sort conversations by last message time (most recent first)
+      return updated.sort((a, b) => {
+        const timeA = a.lastMessageTime?.getTime() || a.createdAt?.getTime() || 0;
+        const timeB = b.lastMessageTime?.getTime() || b.createdAt?.getTime() || 0;
+        return timeB - timeA;
+      });
+    });
     
     // Send the message via WebSocket
-    // socket?.emit('send_message', originalMessage);
+    if (socket) {
+      const originalMessage = toOriginalMessage(newMessage);
+      socket.emit('send_message', {
+        ...originalMessage,
+        senderName: currentUser.name,
+        senderAvatar: currentUser.avatar
+      });
+    }
   };
 
   const handleEditMessage = (messageId: string, content: string) => {
@@ -356,6 +494,17 @@ function App() {
   // Handle conversation selection - on mobile, this navigates to chat view
   const handleSelectConversation = (conversationId: string) => {
     setSelectedConversationId(conversationId);
+    
+    // Join the conversation room via WebSocket
+    if (socket && currentUser) {
+      socket.emit('join_conversation', {
+        conversationId,
+        userId: currentUser.id,
+        userName: currentUser.name,
+        userAvatar: currentUser.avatar,
+        userStatus: currentUser.status
+      });
+    }
   };
 
   // Handle back navigation on mobile
@@ -369,23 +518,13 @@ function App() {
   }
 
   return (
-    <div className="flex h-[100dvh] bg-background overflow-hidden w-full max-w-full touch-pan-y">
-      {/* Hide sidebar completely on mobile - show only on desktop */}
-      {!isMobile && (
-        <Sidebar
-          currentUser={{
-            ...currentUser,
-            status: currentUser.status as 'online' | 'offline' | 'away'
-          }}
-          activeTab={activeTab}
-          onTabChange={setActiveTab}
-        />
-      )}
-
+    <div className="flex flex-col h-[100dvh] bg-background overflow-hidden w-full max-w-full touch-pan-y">
+      {/* Mobile-first: Always show chats, hide sidebar on mobile */}
+      <div className="flex-1 overflow-hidden pb-16 md:pb-0">
       {activeTab === 'chats' && (
         <>
-          {/* Conversations List - Full width on mobile when no conversation selected, fixed width on desktop */}
-          <div className={`${isMobile ? 'w-full' : 'w-80'} flex-shrink-0 ${isMobile && selectedConversationId ? 'hidden' : 'block'}`}>
+          {/* Conversations List - Full width on mobile */}
+          <div className={`w-full flex-shrink-0 ${selectedConversationId ? 'hidden' : 'block'}`}>
             <ConversationsList
               conversations={conversations.map(conv => ({
                 id: conv.id,
@@ -405,11 +544,12 @@ function App() {
               })) as unknown as import('./types/chat').Conversation[]}
               selectedId={selectedConversationId || undefined}
               onSelect={handleSelectConversation}
+              currentUserId={currentUser.id}
             />
           </div>
 
-          {/* Chat Interface - Full width on mobile when conversation selected, flex-1 on desktop */}
-          <div className={`${isMobile ? 'w-full' : 'flex-1'} min-w-0 overflow-hidden ${isMobile && !selectedConversationId ? 'hidden' : 'block'}`}>
+          {/* Chat Interface - Full width on mobile when conversation selected */}
+          <div className={`w-full min-w-0 overflow-hidden ${!selectedConversationId ? 'hidden' : 'block'}`}>
             {selectedConversation ? (
               <ChatInterface
                 conversation={{
@@ -483,6 +623,41 @@ function App() {
       {activeTab === 'settings' && (
         <SettingsPage currentUser={currentUser} onUpdateUser={handleUpdateUser} />
       )}
+      </div>
+
+      {/* Mobile Bottom Navigation Bar */}
+      <div className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-sm border-t border-border z-50 md:hidden safe-area-inset-bottom">
+        <div className="flex items-center justify-around h-16 px-2">
+          <button
+            onClick={() => setActiveTab('chats')}
+            className={`flex flex-col items-center justify-center gap-1 flex-1 h-full ${activeTab === 'chats' ? 'text-primary' : 'text-muted-foreground'}`}
+          >
+            <MessageSquare className="w-6 h-6" />
+            <span className="text-xs font-medium">الدردشات</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('contacts')}
+            className={`flex flex-col items-center justify-center gap-1 flex-1 h-full ${activeTab === 'contacts' ? 'text-primary' : 'text-muted-foreground'}`}
+          >
+            <Users className="w-6 h-6" />
+            <span className="text-xs font-medium">جهات الاتصال</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('premium')}
+            className={`flex flex-col items-center justify-center gap-1 flex-1 h-full ${activeTab === 'premium' ? 'text-primary' : 'text-muted-foreground'}`}
+          >
+            <Crown className="w-6 h-6" />
+            <span className="text-xs font-medium">مميز</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('settings')}
+            className={`flex flex-col items-center justify-center gap-1 flex-1 h-full ${activeTab === 'settings' ? 'text-primary' : 'text-muted-foreground'}`}
+          >
+            <Settings className="w-6 h-6" />
+            <span className="text-xs font-medium">الإعدادات</span>
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

@@ -59,6 +59,7 @@ export interface Conversation extends Omit<OriginalConversation, 'participants' 
   lastMessageTime?: Date;
   isGroup?: boolean;
   isPinned?: boolean;
+  isArchived?: boolean;
   isMuted?: boolean;
   createdAt?: Date;
   updatedAt?: Date;
@@ -74,7 +75,32 @@ export function isOriginalUser(user: any): user is OriginalUser {
 }
 
 // Conversion functions
-export function toMessage(message: OriginalMessage | Message): Message {
+export function toMessage(message: any): Message {
+  // Handle database format (from server)
+  if (message._id || message.id) {
+    const msgId = message._id?.toString() || message.id;
+    const timestamp = message.timestamp 
+      ? (typeof message.timestamp === 'string' ? new Date(message.timestamp) : message.timestamp)
+      : new Date();
+    
+    return {
+      id: msgId,
+      conversationId: message.conversationId?.toString() || message.conversationId,
+      senderId: message.senderId?.toString() || message.senderId,
+      content: message.content || '',
+      timestamp: timestamp,
+      status: (message.status || 'sent') as MessageStatus,
+      replyTo: message.replyTo?.toString() || message.replyTo || null,
+      reactions: (message.reactions || []).map((r: any) => ({
+        emoji: r.emoji,
+        userIds: r.userIds || [r.userId].filter(Boolean),
+        userNames: r.userNames || []
+      })),
+      edited: message.edited || false,
+      attachments: message.attachments || []
+    };
+  }
+
   // If it's already our enhanced Message type, return as is
   if ('reactions' in message && Array.isArray(message.reactions) && message.reactions.length > 0 && 'userIds' in message.reactions[0]) {
     return message as Message;
@@ -132,12 +158,76 @@ export function toOriginalUser(user: User): OriginalUser {
   };
 }
 
-export function toConversation(conversation: OriginalConversation | Conversation): Conversation {
-  // If it's already our enhanced Conversation type, return as is
-  if ('isGroup' in conversation || 'participants' in conversation && conversation.participants.length > 0 && 'lastSeen' in conversation.participants[0]) {
+export function toConversation(conversation: any): Conversation {
+  // Handle database format (from server)
+  if (conversation._id || conversation.id) {
+    const convId = conversation._id?.toString() || conversation.id;
+    const participants = Array.isArray(conversation.participants)
+      ? conversation.participants.map((p: any) => {
+          // Handle populated or direct user objects
+          const userId = p._id?.toString() || p.id || p.toString();
+          const userName = p.name || 'Unknown';
+          const userAvatar = p.avatar || '';
+          const userStatus = p.status || 'offline';
+          const userLastSeen = p.lastSeen ? new Date(p.lastSeen) : new Date();
+          
+          return {
+            id: userId,
+            name: userName,
+            avatar: userAvatar,
+            status: userStatus as 'online' | 'offline' | 'away',
+            lastSeen: userLastSeen
+          } as User;
+        })
+      : [];
+
+    const lastMessage = conversation.lastMessage ? {
+      id: conversation.lastMessage._id?.toString() || conversation.lastMessage.id,
+      content: conversation.lastMessage.content || '',
+      timestamp: conversation.lastMessage.timestamp 
+        ? (typeof conversation.lastMessage.timestamp === 'string' 
+            ? new Date(conversation.lastMessage.timestamp) 
+            : conversation.lastMessage.timestamp)
+        : new Date(),
+      senderId: conversation.lastMessage.senderId?.toString() || conversation.lastMessage.senderId,
+      status: (conversation.lastMessage.status || 'sent') as MessageStatus,
+      replyTo: conversation.lastMessage.replyTo?.toString() || conversation.lastMessage.replyTo || null,
+      reactions: conversation.lastMessage.reactions || [],
+      edited: conversation.lastMessage.edited || false,
+      attachments: conversation.lastMessage.attachments || []
+    } : undefined;
+
+    return {
+      id: convId,
+      name: conversation.name || '',
+      type: conversation.isGroup ? 'group' as const : 'direct' as const,
+      participants: participants,
+      avatar: conversation.avatar || '',
+      lastMessage: lastMessage,
+      lastMessageTime: conversation.lastMessageTime 
+        ? (typeof conversation.lastMessageTime === 'string' 
+            ? new Date(conversation.lastMessageTime) 
+            : conversation.lastMessageTime)
+        : undefined,
+      isGroup: conversation.isGroup || false,
+      isPinned: conversation.isPinned || false,
+      isArchived: conversation.isArchived || false,
+      isMuted: conversation.isMuted || false,
+      createdAt: conversation.createdAt 
+        ? (typeof conversation.createdAt === 'string' ? new Date(conversation.createdAt) : conversation.createdAt)
+        : new Date(),
+      updatedAt: conversation.updatedAt 
+        ? (typeof conversation.updatedAt === 'string' ? new Date(conversation.updatedAt) : conversation.updatedAt)
+        : new Date()
+    } as Conversation;
+  }
+
+  // Handle already converted format
+  if ('isGroup' in conversation || (conversation.participants && conversation.participants.length > 0 && typeof conversation.participants[0] === 'object' && 'lastSeen' in conversation.participants[0])) {
     return conversation as Conversation;
   }
 
+  // Handle OriginalConversation format
   const originalConversation = conversation as OriginalConversation;
   return {
     ...originalConversation,
