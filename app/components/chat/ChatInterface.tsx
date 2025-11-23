@@ -49,24 +49,24 @@ export function ChatInterface({
       // Convert timestamp to Date object if it's a string (from WebSocket)
       const processedMessage: MessageType = {
         ...message as MessageType,
-        timestamp: typeof message.timestamp === 'string' 
-          ? new Date(message.timestamp) 
-          : message.timestamp instanceof Date 
-            ? message.timestamp 
+        timestamp: typeof message.timestamp === 'string'
+          ? new Date(message.timestamp)
+          : message.timestamp instanceof Date
+            ? message.timestamp
             : new Date()
       };
-      
+
       // Check if message is from another user (not current user)
       const isFromOtherUser = processedMessage.senderId !== currentUser.id;
-      
+
       // Show notification if message is from another user
       if (isFromOtherUser) {
-        const senderName = (processedMessage as any).senderName || 
-                          (conversation.participants?.find((p: any) => p.id === processedMessage.senderId)?.name) || 
+        const senderName = (processedMessage as any).senderName ||
+                          (conversation.participants?.find((p: any) => p.id === processedMessage.senderId)?.name) ||
                           'Unknown';
-        const senderAvatar = (processedMessage as any).senderAvatar || 
+        const senderAvatar = (processedMessage as any).senderAvatar ||
                             (conversation.participants?.find((p: any) => p.id === processedMessage.senderId)?.avatar);
-        
+
         // Get message content (handle text or attachments)
         let messageContent = processedMessage.content || '';
         if ((processedMessage as any).attachments && (processedMessage as any).attachments.length > 0) {
@@ -81,7 +81,7 @@ export function ChatInterface({
             messageContent = dir === 'rtl' ? '📍 موقع' : '📍 Location';
           }
         }
-        
+
         NotificationService.showMessageNotification(
           senderName,
           messageContent,
@@ -90,7 +90,7 @@ export function ChatInterface({
           dir
         );
       }
-      
+
       // Update message status from 'sending' to 'sent' if it's our message
       // Or add new message if it's from another user
       handleSendMessage(processedMessage);
@@ -157,17 +157,17 @@ export function ChatInterface({
               });
             });
           }
-          
+
           return {
             id: msg.id,
             conversationId: msg.conversationId,
             senderId: msg.senderId,
             content: msg.content,
             // Convert timestamp to Date object - ensure it's the actual timestamp
-            timestamp: typeof msg.timestamp === 'string' 
-              ? new Date(msg.timestamp) 
-              : msg.timestamp instanceof Date 
-                ? msg.timestamp 
+            timestamp: typeof msg.timestamp === 'string'
+              ? new Date(msg.timestamp)
+              : msg.timestamp instanceof Date
+                ? msg.timestamp
                 : new Date(msg.timestamp || Date.now()),
             status: msg.status as 'sending' | 'sent' | 'delivered' | 'read',
             replyTo: msg.replyTo || undefined,
@@ -183,7 +183,7 @@ export function ChatInterface({
             }))
           } as MessageType;
         });
-        
+
         // Only add if we don't have messages yet or if history is more recent
         historyMessages.forEach(msg => {
           handleSendMessage(msg);
@@ -194,7 +194,7 @@ export function ChatInterface({
     // Listen for typing indicator
     const handleUserTyping = (data: { userId: string; userName?: string; isTyping: boolean }) => {
       if (data.userId === currentUser.id) return; // Don't show own typing indicator
-      
+
       setTypingUsers(prev => {
         const newSet = new Set(prev);
         if (data.isTyping) {
@@ -210,7 +210,7 @@ export function ChatInterface({
     socket.on('receive_message', handleReceiveMessage);
     socket.on('conversation_history', handleConversationHistory); // Receive conversation history (real-time sync)
     socket.on('user_typing', handleUserTyping); // Listen for typing indicator
-    
+
     // Listen for message reactions
     socket.on('message_reaction', handleMessageReaction);
 
@@ -258,12 +258,12 @@ export function ChatInterface({
 
   const sendMessage = (content: string, replyToId?: string, attachments?: AttachmentData[]) => {
     if (!socket) return;
-    
+
     // Format attachments for message
-    const messageContent = attachments && attachments.length > 0 
+    const messageContent = attachments && attachments.length > 0
       ? (content || (attachments[0].type === 'location' ? (dir === 'rtl' ? '📍 موقعي' : '📍 My Location') : attachments[0].name))
       : content;
-    
+
     const newMessage: MessageType = {
       id: `msg-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       conversationId: conversation.id,
@@ -331,7 +331,7 @@ export function ChatInterface({
 
   const handleReact = (messageId: string, emoji: string) => {
     if (!socket) return;
-    
+
     // Send reaction via WebSocket
     socket.emit('react_to_message', {
       messageId,
@@ -340,7 +340,7 @@ export function ChatInterface({
       userName: currentUser.name,
       conversationId: conversation.id
     });
-    
+
     // Update local state immediately
     onReactToMessage(messageId, emoji);
   };
@@ -367,7 +367,7 @@ export function ChatInterface({
     id: conv.id || '',
     name: conv.name || '',
     avatar: conv.avatar,
-    participants: Array.isArray(conv.participants) 
+    participants: Array.isArray(conv.participants)
       ? conv.participants.map((p: unknown) => {
           if (typeof p === 'string') return p;
           if (typeof p === 'object' && p !== null && 'id' in p) {
@@ -399,19 +399,20 @@ export function ChatInterface({
   };
 
   // Convert messages to the expected type
+  type MessageInput = {
+    id?: string;
+    conversationId?: string;
+    senderId?: string;
+    content?: string;
+    timestamp?: Date;
+    status?: string;
+    replyTo?: string;
+    reactions?: Array<{ emoji?: string; userId?: string; userIds?: string[]; userName?: string; userNames?: string[] }>;
+    attachments?: Array<{ id?: string; type?: string; url?: string; name?: string; size?: number; mimeType?: string }>;
+    edited?: boolean;
+  };
+
   const appMessages: MessageFromTypes[] = messages.map(msg => {
-    interface MessageInput {
-      id?: string;
-      conversationId?: string;
-      senderId?: string;
-      content?: string;
-      timestamp?: Date;
-      status?: string;
-      replyTo?: string;
-      reactions?: Array<{ emoji?: string; userId?: string; userIds?: string[]; userName?: string; userNames?: string[] }>;
-      attachments?: Array<{ id?: string; type?: string; url?: string; name?: string; size?: number; mimeType?: string }>;
-      edited?: boolean;
-    }
     const msgAny = msg as MessageInput;
     return {
       id: msgAny.id || '',
@@ -453,9 +454,9 @@ export function ChatInterface({
 
   return (
     <Card className="flex flex-col h-full w-full min-w-0 rounded-none border-0 overflow-hidden" dir={dir}>
-      <ChatHeader 
-        conversation={appConversation} 
-        currentUser={appUser} 
+      <ChatHeader
+        conversation={appConversation}
+        currentUser={appUser}
         onBack={onBack}
         onSearchClick={() => setIsSearchOpen(true)}
         onPinToggle={(conversationId) => {
@@ -478,7 +479,7 @@ export function ChatInterface({
         }}
         onMediaGalleryClick={() => setIsMediaGalleryOpen(true)}
       />
-      
+
       {/* Message Search Dialog */}
       <MessageSearch
         messages={appMessages}
@@ -496,9 +497,9 @@ export function ChatInterface({
         onSelectMessage={handleSelectMessage}
       />
 
-      <ScrollArea 
-        className="flex-1 p-2 sm:p-4 min-h-0 overflow-y-auto touch-manipulation" 
-        style={{ 
+      <ScrollArea
+        className="flex-1 p-2 sm:p-4 min-h-0 overflow-y-auto touch-manipulation"
+        style={{
           maxHeight: 'calc(100dvh - 180px)',
           height: 'calc(100dvh - 180px)',
           WebkitOverflowScrolling: 'touch',
@@ -507,12 +508,12 @@ export function ChatInterface({
       >
         <div className="space-y-3 sm:space-y-4 pb-2 sm:pb-4 min-w-0">
           {appMessages.map((message) => {
-            interface ConversationInput {
+            type ConversationInput = {
               participants?: Array<string | User | { id?: string }>;
-            }
+            };
             const convInput = conversation as ConversationInput;
-            const senderParticipants = Array.isArray(convInput.participants) 
-              ? convInput.participants 
+            const senderParticipants = Array.isArray(convInput.participants)
+              ? convInput.participants
               : [];
             const sender = senderParticipants.find((p: string | User | { id?: string }) => {
               const id = typeof p === 'string' ? p : p.id;
@@ -539,10 +540,11 @@ export function ChatInterface({
                 currentUserId={appUser.id}
                 conversation={{ participants: senderParticipants.map((p: string | User | { id?: string }) => typeof p === 'string' ? appUser : toUser(p as User)) }}
               />
+              </div>
             );
           })}
           <div ref={scrollRef} />
-          
+
           {/* Typing Indicator */}
           {typingUsers.size > 0 && (
             <div className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground animate-pulse">
@@ -557,8 +559,8 @@ export function ChatInterface({
                     const id = typeof p === 'string' ? p : p.id;
                     return id === userId;
                   });
-                  const userName = typeof typingUser === 'string' 
-                    ? typingUser 
+                  const userName = typeof typingUser === 'string'
+                    ? typingUser
                     : typingUser?.name || 'Someone';
                   return index === 0 ? userName : `, ${userName}`;
                 }).join('')}

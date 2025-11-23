@@ -33,7 +33,7 @@ Advanced chat application built with Next.js featuring real-time messaging, push
 3. املأ المعلومات:
    - **Repository name**: `Royal-chat`
    - **Description**: انسخ الوصف أعلاه
-   - **Visibility**: 
+   - **Visibility**:
      - ✅ **Public** (إذا أردت أن يكون مفتوحاً)
      - ⚪ **Private** (إذا أردت أن يكون خاصاً)
    - **لا** تضع علامة على:

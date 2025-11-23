@@ -48,7 +48,7 @@
 
 ## 📋 Prerequisites
 
-- Node.js 18+ 
+- Node.js 18+
 - MongoDB (local or cloud)
 - npm, yarn, or bun
 

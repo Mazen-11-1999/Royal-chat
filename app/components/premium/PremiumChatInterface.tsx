@@ -72,13 +72,13 @@ export function PremiumChatInterface({ currentUser, subscription }: PremiumChatI
       // Clear any old image backgrounds to use Royal default
       // User can set custom background from settings if they want
       const bgColor = localStorage.getItem('premium_chat_background');
-      
+
       // Only use saved color background if explicitly set and not empty
       // Otherwise, use empty (which means Royal branding background)
       if (bgColor && bgColor !== '' && bgColor !== 'royal-black-gold') {
         return { type: 'color', value: bgColor };
       }
-      
+
       // Default: empty means use Royal branding background
       // Clear any saved image to ensure Royal background shows
       if (localStorage.getItem('premium_chat_background_image')) {
@@ -90,7 +90,7 @@ export function PremiumChatInterface({ currentUser, subscription }: PremiumChatI
     // Default: empty means use Royal branding background
     return { type: 'color', value: '' };
   });
-  
+
   // Check if current user is admin
   const isCurrentUserAdmin = isAdmin && adminUser?.id === currentUser.id;
   const isInvisible = isCurrentUserAdmin && adminUser?.isInvisible;
@@ -107,7 +107,7 @@ export function PremiumChatInterface({ currentUser, subscription }: PremiumChatI
     const handleBackgroundChange = (e: CustomEvent) => {
       setChatBackground({ type: e.detail.type, value: e.detail.value });
     };
-    
+
     window.addEventListener('premium-background-changed', handleBackgroundChange as EventListener);
     return () => {
       window.removeEventListener('premium-background-changed', handleBackgroundChange as EventListener);
@@ -177,7 +177,7 @@ export function PremiumChatInterface({ currentUser, subscription }: PremiumChatI
               }));
             setMembers(prev => {
               const currentUserMember = prev.find(m => m.id === displayUser.id);
-              return currentUserMember 
+              return currentUserMember
                 ? [currentUserMember, ...activeAdminMembers.filter((m: any) => m.id !== displayUser.id)]
                 : [...prev, ...activeAdminMembers];
             });
@@ -204,8 +204,8 @@ export function PremiumChatInterface({ currentUser, subscription }: PremiumChatI
             const style = JSON.parse(saved);
             setUserNameStyles(prev => new Map(prev).set(loggedInUser.id, style));
             // Update members list with saved name style
-            setMembers(prev => prev.map(member => 
-              member.id === loggedInUser.id 
+            setMembers(prev => prev.map(member =>
+              member.id === loggedInUser.id
                 ? { ...member, customNameStyle: style } as User & { customNameStyle?: any }
                 : member
             ));
@@ -222,8 +222,8 @@ export function PremiumChatInterface({ currentUser, subscription }: PremiumChatI
       if (e.detail.userId) {
         setUserNameStyles(prev => new Map(prev).set(e.detail.userId, e.detail.style));
         // Update members list when name style is updated
-        setMembers(prev => prev.map(member => 
-          member.id === e.detail.userId 
+        setMembers(prev => prev.map(member =>
+          member.id === e.detail.userId
             ? { ...member, customNameStyle: e.detail.style } as User & { customNameStyle?: any }
             : member
         ));
@@ -233,8 +233,8 @@ export function PremiumChatInterface({ currentUser, subscription }: PremiumChatI
     const handleFrameUpdate = (e: CustomEvent) => {
       if (e.detail.userId && e.detail.frameConfig) {
         // Update members list when frame is updated
-        setMembers(prev => prev.map(member => 
-          member.id === e.detail.userId 
+        setMembers(prev => prev.map(member =>
+          member.id === e.detail.userId
             ? { ...member, selectedFrame: e.detail.frameConfig, frameConfig: e.detail.frameConfig } as User & { selectedFrame?: any; frameConfig?: any }
             : member
         ));
@@ -271,7 +271,7 @@ export function PremiumChatInterface({ currentUser, subscription }: PremiumChatI
   };
 
   // Get current active advertisement
-  const currentAd = advertisements.length > 0 
+  const currentAd = advertisements.length > 0
     ? advertisements.find((ad, index) => {
         const actualIndex = (currentAdIndex + index) % advertisements.length;
         return !dismissedAds.has(advertisements[actualIndex]?.id);
@@ -291,7 +291,7 @@ export function PremiumChatInterface({ currentUser, subscription }: PremiumChatI
       ? localStorage.getItem(`premium_name_style_${loggedInUser.id}`)
       : null;
     const nameEffect = savedNameStyle ? JSON.parse(savedNameStyle) : null;
-    
+
     socket.emit('join_conversation', {
       conversationId: PREMIUM_CHAT_ID,
       userId: displayUser.id,
@@ -322,7 +322,7 @@ export function PremiumChatInterface({ currentUser, subscription }: PremiumChatI
         ? localStorage.getItem(`premium_frame_${loggedInUser.id}`)
         : null;
       const userFrame = savedFrame ? JSON.parse(savedFrame) : null;
-      
+
       initialMembers.push({
         id: displayUser.id,
         name: displayUser.name,
@@ -335,7 +335,7 @@ export function PremiumChatInterface({ currentUser, subscription }: PremiumChatI
         frameConfig: userFrame || undefined // Also set frameConfig for consistency
       } as User & { isPremiumSubscriber?: boolean; rank?: number; customNameStyle?: any; selectedFrame?: any; frameConfig?: any });
     }
-    
+
     // Load saved members from admin (real data only - no default owner)
     if (typeof window !== 'undefined') {
       const savedMembers = localStorage.getItem('premium_members');
@@ -377,14 +377,14 @@ export function PremiumChatInterface({ currentUser, subscription }: PremiumChatI
       // Convert timestamp to Date object if it's a string (from WebSocket)
       const processedMessage: Message = {
         ...message as Message,
-        timestamp: typeof message.timestamp === 'string' 
-          ? new Date(message.timestamp) 
-          : message.timestamp instanceof Date 
-            ? message.timestamp 
+        timestamp: typeof message.timestamp === 'string'
+          ? new Date(message.timestamp)
+          : message.timestamp instanceof Date
+            ? message.timestamp
             : new Date(),
         status: 'sent' as const
       };
-      
+
       // Don't add duplicate messages
       setMessages(prev => {
         const existingIndex = prev.findIndex(m => m.id === processedMessage.id);
@@ -397,7 +397,7 @@ export function PremiumChatInterface({ currentUser, subscription }: PremiumChatI
         // Add new message with 'sent' status
         return [...prev, processedMessage];
       });
-      
+
       // Auto-scroll to bottom when new message arrives
       setTimeout(() => {
         scrollRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -405,8 +405,8 @@ export function PremiumChatInterface({ currentUser, subscription }: PremiumChatI
     };
 
     // Listen for user joined with complete info (real-time)
-    const handleUserJoined = (data: { 
-      userId: string; 
+    const handleUserJoined = (data: {
+      userId: string;
       userName: string;
       userAvatar?: string;
       userFrame?: any;
@@ -418,12 +418,12 @@ export function PremiumChatInterface({ currentUser, subscription }: PremiumChatI
       if (isCurrentUserAdmin && isInvisible && data.userId === currentUser.id) {
         return;
       }
-      
+
       setMembers(prev => {
         if (prev.find(m => m.id === data.userId)) {
           // Update existing user with new info (real-time update)
-          return prev.map(member => 
-            member.id === data.userId 
+          return prev.map(member =>
+            member.id === data.userId
               ? {
                   ...member,
                   name: data.userName || member.name,
@@ -437,12 +437,12 @@ export function PremiumChatInterface({ currentUser, subscription }: PremiumChatI
               : member
           );
         }
-        
+
         // Don't show admin in members list if invisible
         if (isCurrentUserAdmin && isInvisible && data.userId === currentUser.id) {
           return prev;
         }
-        
+
         // Add new user with complete info (real-time)
         return [...prev, {
           id: data.userId,
@@ -455,7 +455,7 @@ export function PremiumChatInterface({ currentUser, subscription }: PremiumChatI
           customNameStyle: data.userNameEffect ? { nameEffect: data.userNameEffect } : undefined
         } as User & { isPremiumSubscriber?: boolean; selectedFrame?: any; frameConfig?: any; customNameStyle?: any }];
       });
-      
+
       // Update name styles map
       if (data.userNameEffect) {
         setUserNameStyles(prev => {
@@ -465,7 +465,7 @@ export function PremiumChatInterface({ currentUser, subscription }: PremiumChatI
         });
       }
     };
-    
+
     // Listen for conversation history (when joining, receive all previous messages)
     const handleConversationHistory = (data: {
       conversationId: string;
@@ -492,10 +492,10 @@ export function PremiumChatInterface({ currentUser, subscription }: PremiumChatI
           senderId: msg.senderId,
           content: msg.content,
           // Convert timestamp to Date object - ensure it's the actual timestamp
-          timestamp: typeof msg.timestamp === 'string' 
-            ? new Date(msg.timestamp) 
-            : msg.timestamp instanceof Date 
-              ? msg.timestamp 
+          timestamp: typeof msg.timestamp === 'string'
+            ? new Date(msg.timestamp)
+            : msg.timestamp instanceof Date
+              ? msg.timestamp
               : new Date(msg.timestamp || Date.now()),
           status: msg.status as 'sending' | 'sent' | 'delivered' | 'read',
           replyTo: msg.replyTo || undefined,
@@ -506,7 +506,7 @@ export function PremiumChatInterface({ currentUser, subscription }: PremiumChatI
           })),
           edited: msg.edited || false
         }));
-        
+
         // Only add if we don't have messages yet or if history is more recent
         setMessages(prev => {
           if (prev.length === 0) {
@@ -515,7 +515,7 @@ export function PremiumChatInterface({ currentUser, subscription }: PremiumChatI
           // Merge with existing messages (avoid duplicates)
           const existingIds = new Set(prev.map(m => m.id));
           const newMessages = historyMessages.filter(m => !existingIds.has(m.id));
-          return [...prev, ...newMessages].sort((a, b) => 
+          return [...prev, ...newMessages].sort((a, b) =>
             a.timestamp.getTime() - b.timestamp.getTime()
           );
         });
@@ -548,7 +548,7 @@ export function PremiumChatInterface({ currentUser, subscription }: PremiumChatI
             frameConfig: u.userFrame || undefined,
             customNameStyle: u.userNameEffect ? { nameEffect: u.userNameEffect } : undefined
           } as User & { isPremiumSubscriber?: boolean; selectedFrame?: any; frameConfig?: any; customNameStyle?: any }));
-        
+
         // Update name styles
         users.forEach(u => {
           if (u.userNameEffect) {
@@ -559,7 +559,7 @@ export function PremiumChatInterface({ currentUser, subscription }: PremiumChatI
             });
           }
         });
-        
+
         return [...prev, ...newMembers];
       });
     };
@@ -588,9 +588,9 @@ export function PremiumChatInterface({ currentUser, subscription }: PremiumChatI
     };
 
     // Listen for incoming audio chunks from other users (real-time voice)
-    const handleVoiceAudioChunk = (data: { 
-      userId: string; 
-      userName: string; 
+    const handleVoiceAudioChunk = (data: {
+      userId: string;
+      userName: string;
       audioData: string;
       timestamp: Date;
     }) => {
@@ -634,8 +634,8 @@ export function PremiumChatInterface({ currentUser, subscription }: PremiumChatI
 
     // Listen for message edits
     const handleMessageEdited = (data: { messageId: string; content: string; timestamp: Date }) => {
-      setMessages(prev => prev.map(msg => 
-        msg.id === data.messageId 
+      setMessages(prev => prev.map(msg =>
+        msg.id === data.messageId
           ? { ...msg, content: data.content, edited: true, timestamp: data.timestamp }
           : msg
       ));
@@ -650,7 +650,7 @@ export function PremiumChatInterface({ currentUser, subscription }: PremiumChatI
     const handleReactionReceived = (data: { messageId: string; emoji: string; userId: string; userName: string }) => {
       setMessages(prev => prev.map(msg => {
         if (msg.id !== data.messageId) return msg;
-        
+
         const reactions = [...(msg.reactions || [])];
         const existingReactionIndex = reactions.findIndex(r => r.emoji === data.emoji);
 
@@ -690,15 +690,15 @@ export function PremiumChatInterface({ currentUser, subscription }: PremiumChatI
             userNames: [data.userName]
           });
         }
-        
+
         return { ...msg, reactions };
       }));
     };
 
     // Listen for frame updates from other users (real-time)
     const handleUserFrameUpdate = (data: { userId: string; frameConfig: any }) => {
-      setMembers(prev => prev.map(member => 
-        member.id === data.userId 
+      setMembers(prev => prev.map(member =>
+        member.id === data.userId
           ? { ...member, selectedFrame: data.frameConfig, frameConfig: data.frameConfig } as User & { selectedFrame?: any; frameConfig?: any }
           : member
       ));
@@ -711,10 +711,10 @@ export function PremiumChatInterface({ currentUser, subscription }: PremiumChatI
         newMap.set(data.userId, { nameEffect: data.nameEffect });
         return newMap;
       });
-      
+
       // Also update members list
-      setMembers(prev => prev.map(member => 
-        member.id === data.userId 
+      setMembers(prev => prev.map(member =>
+        member.id === data.userId
           ? { ...member, customNameStyle: { nameEffect: data.nameEffect } }
           : member
       ));
@@ -757,17 +757,17 @@ export function PremiumChatInterface({ currentUser, subscription }: PremiumChatI
     if (!isVoiceChatActive) {
       try {
         // Request microphone access
-        const stream = await navigator.mediaDevices.getUserMedia({ 
+        const stream = await navigator.mediaDevices.getUserMedia({
           audio: {
             echoCancellation: true,
             noiseSuppression: true,
             autoGainControl: true
-          } 
+          }
         });
         setLocalStream(stream);
         setIsVoiceChatActive(true);
         setIsMuted(false);
-        
+
         // Join voice chat room
         if (socket) {
           socket.emit('join_voice_chat', {
@@ -791,7 +791,7 @@ export function PremiumChatInterface({ currentUser, subscription }: PremiumChatI
 
         const dataArray = new Uint8Array(analyser.frequencyBinCount);
         let animationFrameId: number;
-        
+
         const checkSpeaking = () => {
           if (!isVoiceChatActive || !localStream || !analyserRef.current) {
             if (animationFrameId) {
@@ -799,14 +799,14 @@ export function PremiumChatInterface({ currentUser, subscription }: PremiumChatI
             }
             return;
           }
-          
+
           analyserRef.current.getByteFrequencyData(dataArray);
           const average = dataArray.reduce((a, b) => a + b) / dataArray.length;
-          
+
           setSpeakingUsers(prev => {
             const isCurrentlySpeaking = prev.includes(currentUser.id);
             const shouldBeSpeaking = average > 30 && !isMuted;
-            
+
             if (shouldBeSpeaking && !isCurrentlySpeaking) {
               // User started speaking
               if (socket) {
@@ -830,12 +830,12 @@ export function PremiumChatInterface({ currentUser, subscription }: PremiumChatI
             }
             return prev;
           });
-          
+
           animationFrameId = requestAnimationFrame(checkSpeaking);
         };
-        
+
         checkSpeaking();
-        
+
         // Cleanup function
         return () => {
           if (animationFrameId) {
@@ -849,14 +849,14 @@ export function PremiumChatInterface({ currentUser, subscription }: PremiumChatI
         };
       } catch (error) {
         console.error('Error accessing microphone:', error);
-        alert(dir === 'rtl' 
+        alert(dir === 'rtl'
           ? 'تم رفض الوصول إلى المايكروفون. يرجى السماح بالوصول لاستخدام الدردشة الصوتية.'
           : 'Microphone access denied. Please allow microphone access to use voice chat.');
       }
     } else {
       // Leave voice chat
       stopAudioRecording();
-      
+
       if (localStream) {
         localStream.getTracks().forEach(track => track.stop());
         setLocalStream(null);
@@ -866,7 +866,7 @@ export function PremiumChatInterface({ currentUser, subscription }: PremiumChatI
         audioContextRef.current = null;
       }
       analyserRef.current = null;
-      
+
       // Stop all remote audio
       audioElements.forEach(audio => {
         audio.pause();
@@ -874,12 +874,12 @@ export function PremiumChatInterface({ currentUser, subscription }: PremiumChatI
       });
       audioElements.clear();
       remoteStreams.clear();
-      
+
       setIsVoiceChatActive(false);
       setIsMuted(false);
       setIsDeafened(false);
       setSpeakingUsers(prev => prev.filter(id => id !== currentUser.id));
-      
+
       if (socket) {
         socket.emit('leave_voice_chat', {
           userId: currentUser.id,
@@ -976,7 +976,7 @@ export function PremiumChatInterface({ currentUser, subscription }: PremiumChatI
       });
     }
     setIsMuted(newMutedState);
-    
+
     // Pause/resume recording based on mute state
     if (mediaRecorderRef.current) {
       if (newMutedState) {
@@ -991,7 +991,7 @@ export function PremiumChatInterface({ currentUser, subscription }: PremiumChatI
         }
       }
     }
-    
+
     if (socket) {
       socket.emit('user_speaking', {
         userId: currentUser.id,
@@ -1007,7 +1007,7 @@ export function PremiumChatInterface({ currentUser, subscription }: PremiumChatI
   const handleToggleDeafen = () => {
     const newDeafenedState = !isDeafened;
     setIsDeafened(newDeafenedState);
-    
+
     // Mute/unmute all remote audio streams
     audioElements.forEach(audio => {
       audio.muted = newDeafenedState;
@@ -1028,10 +1028,10 @@ export function PremiumChatInterface({ currentUser, subscription }: PremiumChatI
         content,
         conversationId: PREMIUM_CHAT_ID
       });
-      
+
       // Update locally immediately (optimistic update)
-      setMessages(prev => prev.map(msg => 
-        msg.id === editingMessage.id 
+      setMessages(prev => prev.map(msg =>
+        msg.id === editingMessage.id
           ? { ...msg, content, edited: true }
           : msg
       ));
@@ -1052,12 +1052,12 @@ export function PremiumChatInterface({ currentUser, subscription }: PremiumChatI
 
       // Add message locally FIRST (optimistic update) - User sees message immediately
       setMessages(prev => [...prev, newMessage]);
-      
+
       // Auto-scroll to show new message
       setTimeout(() => {
         scrollRef.current?.scrollIntoView({ behavior: 'smooth' });
       }, 50);
-      
+
       // Send via WebSocket - Broadcasts to all users in real-time
       socket.emit('send_message', {
         ...newMessage,
@@ -1065,11 +1065,11 @@ export function PremiumChatInterface({ currentUser, subscription }: PremiumChatI
         senderName: displayUser.name,
         senderAvatar: displayUser.avatar
       });
-      
+
       // The server will broadcast this message back via 'receive_message' event
       // This ensures all users (including sender) get the message with server timestamp
       // The handleReceiveMessage will update the status to 'sent'
-      
+
       setReplyingTo(undefined);
       setEditingMessage(undefined);
     }
@@ -1161,7 +1161,7 @@ export function PremiumChatInterface({ currentUser, subscription }: PremiumChatI
   const getBackgroundStyle = () => {
     // Only show image background if explicitly set and not default
     const hasCustomImage = chatBackground.type === 'image' && chatBackground.value && chatBackground.value.trim() !== '';
-    
+
     if (hasCustomImage) {
       return {
         backgroundImage: `url(${chatBackground.value})`,
@@ -1186,10 +1186,10 @@ export function PremiumChatInterface({ currentUser, subscription }: PremiumChatI
       'gradient-emerald': 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)',
       'gradient-rose': 'linear-gradient(135deg, #fa8bff 0%, #2bd2ff 50%, #2bff88 100%)'
     };
-    
+
     // Default: Always use Royal branding background unless user explicitly chose another
     const hasExplicitBackground = chatBackground.value && chatBackground.value !== '' && backgrounds[chatBackground.value];
-    
+
     return {
       background: hasExplicitBackground
         ? backgrounds[chatBackground.value]
@@ -1220,7 +1220,7 @@ export function PremiumChatInterface({ currentUser, subscription }: PremiumChatI
       )}
 
       {/* Main Chat Area - Mobile responsive */}
-      <div 
+      <div
         className="flex-1 flex flex-col h-full w-full min-w-0 relative overflow-x-hidden overflow-y-auto touch-pan-y"
         style={{
           WebkitOverflowScrolling: 'touch',
@@ -1228,7 +1228,7 @@ export function PremiumChatInterface({ currentUser, subscription }: PremiumChatI
         }}
       >
         {/* Premium Animated Background with Decorations */}
-      <div 
+      <div
         className="absolute inset-0 pointer-events-none overflow-hidden premium-bg-animated transition-all duration-1000"
         style={getBackgroundStyle()}
       >
@@ -1245,9 +1245,9 @@ export function PremiumChatInterface({ currentUser, subscription }: PremiumChatI
             <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-0 pointer-events-none">
               <div className="relative">
                 {/* Crown SVG Icon - Luxurious - Smaller on mobile for 1080x2340 */}
-                <svg 
-                  width="150" 
-                  height="150" 
+                <svg
+                  width="150"
+                  height="150"
                   className="sm:w-[200px] sm:h-[200px] md:w-[300px] md:h-[300px] opacity-10 royal-crown"
                   viewBox="0 0 200 200"
                   style={{
@@ -1256,10 +1256,10 @@ export function PremiumChatInterface({ currentUser, subscription }: PremiumChatI
                   }}
                 >
                   {/* Crown Path */}
-                  <path 
-                    d="M50 140 L75 60 L100 80 L125 60 L150 140 Z" 
-                    fill="none" 
-                    stroke="#FFD700" 
+                  <path
+                    d="M50 140 L75 60 L100 80 L125 60 L150 140 Z"
+                    fill="none"
+                    stroke="#FFD700"
                     strokeWidth="4"
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -1269,16 +1269,16 @@ export function PremiumChatInterface({ currentUser, subscription }: PremiumChatI
                   <circle cx="100" cy="50" r="10" fill="#FFD700" />
                   <circle cx="125" cy="60" r="8" fill="#FFD700" />
                   {/* Crown Base */}
-                  <path 
-                    d="M45 140 L155 140 L160 150 L40 150 Z" 
-                    fill="#FFD700" 
+                  <path
+                    d="M45 140 L155 140 L160 150 L40 150 Z"
+                    fill="#FFD700"
                     opacity="0.3"
                   />
                 </svg>
-                
+
                 {/* Royal Text Below Crown - Mobile responsive for 1080x2340 */}
                 <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 sm:mt-4 md:mt-6">
-                  <h1 
+                  <h1
                     className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-bold royal-text"
                     style={{
                       fontFamily: 'serif',
@@ -1300,7 +1300,7 @@ export function PremiumChatInterface({ currentUser, subscription }: PremiumChatI
               const size = 2 + Math.random() * 4;
               const left = Math.random() * 100;
               const top = Math.random() * 100;
-              
+
               return (
                 <div
                   key={`royal-sparkle-${i}`}
@@ -1323,12 +1323,12 @@ export function PremiumChatInterface({ currentUser, subscription }: PremiumChatI
 
             {/* Subtle Golden Gradient Overlay */}
             <div className="absolute inset-0 bg-gradient-to-br from-amber-900/5 via-transparent to-amber-900/5 pointer-events-none" />
-            
+
             {/* Dark Shadows at Edges */}
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,transparent_0%,rgba(0,0,0,0.4)_100%)] pointer-events-none" />
           </>
         )}
-        
+
         {/* Golden Sparkles - Only for selected backgrounds (not Royal default) */}
         {chatBackground.value && chatBackground.value !== '' && chatBackground.value !== 'original-background' && Array.from({ length: 30 }).map((_, i) => {
           const isBlack = chatBackground.value === 'royal-black-gold';
@@ -1352,7 +1352,7 @@ export function PremiumChatInterface({ currentUser, subscription }: PremiumChatI
             />
           );
         })}
-        
+
         {/* Original Background - Animated Gradient Orbs */}
         {chatBackground.value === 'original-background' && (
           <>
@@ -1361,13 +1361,13 @@ export function PremiumChatInterface({ currentUser, subscription }: PremiumChatI
             <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-radial from-primary/10 via-primary/5 to-transparent rounded-full blur-3xl animate-pulse-slow premium-orb-3" style={{ animationDelay: '2s' }} />
             <div className="absolute top-1/3 right-1/3 w-72 h-72 bg-gradient-to-br from-pink-500/15 via-rose-500/8 to-transparent rounded-full blur-3xl animate-pulse-slow premium-orb-4" style={{ animationDelay: '1.5s' }} />
             <div className="absolute bottom-1/3 left-1/3 w-80 h-80 bg-gradient-to-tr from-cyan-500/15 via-teal-500/8 to-transparent rounded-full blur-3xl animate-pulse-slow premium-orb-5" style={{ animationDelay: '2.5s' }} />
-            
+
             {/* Floating Decorative Elements */}
             <div className="absolute top-20 left-10 text-6xl opacity-10 animate-float-slow premium-decoration-1">👑</div>
             <div className="absolute top-40 right-20 text-5xl opacity-10 animate-float-slow premium-decoration-2" style={{ animationDelay: '0.5s' }}>✨</div>
             <div className="absolute bottom-32 left-20 text-4xl opacity-10 animate-float-slow premium-decoration-3" style={{ animationDelay: '1s' }}>💎</div>
             <div className="absolute bottom-20 right-16 text-5xl opacity-10 animate-float-slow premium-decoration-4" style={{ animationDelay: '1.5s' }}>🌟</div>
-            
+
             {/* Floating Particles */}
             {Array.from({ length: 15 }).map((_, i) => (
               <div
@@ -1381,12 +1381,12 @@ export function PremiumChatInterface({ currentUser, subscription }: PremiumChatI
                 }}
               />
             ))}
-            
+
             {/* Animated Grid Pattern */}
             <div className="absolute inset-0 premium-grid-pattern opacity-5" />
           </>
         )}
-        
+
         {/* Subtle Golden Glow Orbs - Very light */}
         {chatBackground.value === 'royal-black-gold' && (
           <>
@@ -1395,7 +1395,7 @@ export function PremiumChatInterface({ currentUser, subscription }: PremiumChatI
             <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-radial from-yellow-500/3 via-amber-500/2 to-transparent rounded-full blur-3xl animate-pulse-slow premium-orb-3" style={{ animationDelay: '4s' }} />
           </>
         )}
-        
+
         {chatBackground.value === 'royal-white-gold' && (
           <>
             <div className="absolute top-0 left-1/4 w-96 h-96 bg-gradient-to-br from-yellow-400/3 via-amber-400/2 to-transparent rounded-full blur-3xl animate-pulse-slow premium-orb-1" />
@@ -1403,7 +1403,7 @@ export function PremiumChatInterface({ currentUser, subscription }: PremiumChatI
             <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-radial from-yellow-400/2 via-amber-400/1 to-transparent rounded-full blur-3xl animate-pulse-slow premium-orb-3" style={{ animationDelay: '4s' }} />
           </>
         )}
-        
+
         {/* Animated Grid Pattern - Very subtle for black/white backgrounds */}
         {chatBackground.value !== 'original-background' && (
           <div className="absolute inset-0 premium-grid-pattern opacity-[0.02]" />
@@ -1422,7 +1422,7 @@ export function PremiumChatInterface({ currentUser, subscription }: PremiumChatI
                   isCurrentUserAdmin && "admin-glow-jewel"
                 )}
                 style={{
-                  background: isCurrentUserAdmin 
+                  background: isCurrentUserAdmin
                     ? `linear-gradient(135deg, #ffd700, #ffed4e, #ffd700)`
                     : `linear-gradient(135deg, hsl(var(--chat-from)), hsl(var(--chat-to)))`
                 }}
@@ -1431,9 +1431,9 @@ export function PremiumChatInterface({ currentUser, subscription }: PremiumChatI
                 "w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 border-2 sm:border-2 md:border-3 border-background relative z-10 shadow-xl animate-fade-in-scale flex-shrink-0",
                 isCurrentUserAdmin && "admin-avatar-jewel"
               )}>
-                <AvatarFallback 
+                <AvatarFallback
                   className={cn(
-                    isCurrentUserAdmin 
+                    isCurrentUserAdmin
                       ? "admin-avatar-bg-jewel"
                       : "bg-gradient-to-br from-primary to-primary/60"
                   )}
@@ -1539,10 +1539,10 @@ export function PremiumChatInterface({ currentUser, subscription }: PremiumChatI
                 )}
               </Button>
             )}
-            
+
             {/* Premium Chat Settings */}
             <PremiumChatSettings />
-            
+
             {/* Subscription Offers Button */}
             <Button
               type="button"
@@ -1558,7 +1558,7 @@ export function PremiumChatInterface({ currentUser, subscription }: PremiumChatI
             >
               <Crown className="w-4 h-4 sm:w-4 sm:h-4 md:w-5 md:h-5 text-yellow-500" />
             </Button>
-            
+
             <Badge variant="outline" className="border-primary text-primary animate-fade-in-scale text-[9px] sm:text-[10px] md:text-xs px-1.5 sm:px-2 md:px-3 py-0.5 sm:py-1 min-h-[24px] sm:min-h-[26px] md:min-h-[28px]">
               {dir === 'rtl' ? 'مدى الحياة' : 'Lifetime'}
             </Badge>
@@ -1619,24 +1619,24 @@ export function PremiumChatInterface({ currentUser, subscription }: PremiumChatI
                   frameConfig: frameConfig
                 }));
                 // Update user's frame config
-                window.dispatchEvent(new CustomEvent('premium-frame-updated', { 
-                  detail: { userId: loggedInUser.id, frameConfig: frameConfig } 
+                window.dispatchEvent(new CustomEvent('premium-frame-updated', {
+                  detail: { userId: loggedInUser.id, frameConfig: frameConfig }
                 }));
               }
-              
+
               setSelectedFrame(frameConfig);
-              
+
               // Update local members list immediately - تحديث فوري في الدردشة
-              setMembers(prev => prev.map(member => 
-                member.id === displayUser.id 
-                  ? { 
-                      ...member, 
+              setMembers(prev => prev.map(member =>
+                member.id === displayUser.id
+                  ? {
+                      ...member,
                       selectedFrame: frameConfig,
-                      frameConfig: frameConfig 
+                      frameConfig: frameConfig
                     } as User & { selectedFrame?: any; frameConfig?: any }
                   : member
               ));
-              
+
               // Broadcast frame update to all users in premium chat via WebSocket
               if (socket) {
                 socket.emit('update_user_frame', {
@@ -1646,7 +1646,7 @@ export function PremiumChatInterface({ currentUser, subscription }: PremiumChatI
                   conversationId: PREMIUM_CHAT_ID
                 });
               }
-              
+
               setShowSubscriptionOffers(false);
             }}
             onSelectNameEffect={(effect) => {
@@ -1655,11 +1655,11 @@ export function PremiumChatInterface({ currentUser, subscription }: PremiumChatI
                 localStorage.setItem(`premium_name_style_${loggedInUser.id}`, JSON.stringify({
                   nameEffect: effect
                 }));
-                window.dispatchEvent(new CustomEvent('premium-name-style-updated', { 
-                  detail: { userId: loggedInUser.id, style: { nameEffect: effect } } 
+                window.dispatchEvent(new CustomEvent('premium-name-style-updated', {
+                  detail: { userId: loggedInUser.id, style: { nameEffect: effect } }
                 }));
               }
-              
+
               // Update local state
               setUserNameStyles(prev => {
                 const newMap = new Map(prev);
@@ -1668,17 +1668,17 @@ export function PremiumChatInterface({ currentUser, subscription }: PremiumChatI
                 }
                 return newMap;
               });
-              
+
               // Update local members list immediately - تحديث فوري في الدردشة
-              setMembers(prev => prev.map(member => 
-                member.id === displayUser.id 
-                  ? { 
-                      ...member, 
+              setMembers(prev => prev.map(member =>
+                member.id === displayUser.id
+                  ? {
+                      ...member,
                       customNameStyle: { nameEffect: effect }
                     } as User & { customNameStyle?: any }
                   : member
               ));
-              
+
               // Broadcast name effect update to all users in premium chat via WebSocket
               if (socket) {
                 socket.emit('update_user_name_effect', {
@@ -1688,7 +1688,7 @@ export function PremiumChatInterface({ currentUser, subscription }: PremiumChatI
                   conversationId: PREMIUM_CHAT_ID
                 });
               }
-              
+
               setShowSubscriptionOffers(false);
             }}
             onClose={() => setShowSubscriptionOffers(false)}
@@ -1699,7 +1699,7 @@ export function PremiumChatInterface({ currentUser, subscription }: PremiumChatI
       {/* Royal Name Bar - Luxury Premium Names Display - Mobile responsive */}
       {!showSubscriptionOffers && members.length > 0 && (
         <div className="px-0 sm:px-2 relative z-20 w-full animate-slide-in-down">
-          <RoyalNameBar 
+          <RoyalNameBar
             users={members.map(m => ({
               ...m,
               frameConfig: (m as any).frameConfig || (m as any).selectedFrame,
@@ -1732,7 +1732,7 @@ export function PremiumChatInterface({ currentUser, subscription }: PremiumChatI
       )}
 
       {/* Messages - Mobile responsive with better sizing for 1080x2340 */}
-      <ScrollArea 
+      <ScrollArea
         className="flex-1 p-1.5 sm:p-2 md:p-3 relative z-10 w-full min-w-0 touch-pan-y"
         style={{
           maxHeight: 'calc(100dvh - 200px)',
@@ -1794,7 +1794,7 @@ export function PremiumChatInterface({ currentUser, subscription }: PremiumChatI
 
 
       {/* Message Input - Mobile responsive with animations */}
-      <div 
+      <div
         className="relative z-10 bg-background/95 backdrop-blur-sm border-t border-border w-full touch-manipulation animate-slide-in-up"
         style={{
           paddingBottom: 'max(0.5rem, env(safe-area-inset-bottom))',
@@ -1813,4 +1813,3 @@ export function PremiumChatInterface({ currentUser, subscription }: PremiumChatI
     </div>
   );
 }
-

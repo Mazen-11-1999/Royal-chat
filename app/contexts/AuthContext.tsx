@@ -98,7 +98,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Trim inputs to handle accidental spaces
     const trimmedUsername = username.trim();
     const trimmedPassword = password.trim();
-    
+
     try {
       // Use API for authentication
       const response = await fetch('/api/admin/login', {
@@ -136,7 +136,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       console.error('Error during login:', error);
     }
-    
+
     return false;
   };
 
@@ -163,7 +163,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const loadAdminsFromAPI = async () => {
     if (!user || user.role !== 'owner' || !user.userId) return;
-    
+
     try {
       const response = await fetch(`/api/admin/admins?ownerId=${user.userId}`);
       if (response.ok) {
@@ -219,7 +219,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       console.error('Error creating admin:', error);
     }
-    
+
     return false;
   };
 
@@ -255,7 +255,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       console.error('Error updating admin:', error);
     }
-    
+
     return false;
   };
 
@@ -283,7 +283,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       console.error('Error deleting admin:', error);
     }
-    
+
     return false;
   };
 
@@ -347,4 +347,3 @@ export function useAuth() {
   }
   return context;
 }
-

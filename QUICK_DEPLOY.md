@@ -3,6 +3,7 @@
 ## 🎯 كل شيء جاهز - لا تحتاج Firebase!
 
 ### ✅ ما الذي يعمل بدون Firebase:
+
 - ✅ Push Notifications (Web Push API)
 - ✅ Database (MongoDB)
 - ✅ Real-time (Socket.io)
@@ -33,6 +34,7 @@ npx web-push generate-vapid-keys
 ```
 
 انسخ:
+
 - **Public Key** → `VAPID_PUBLIC_KEY`
 - **Private Key** → `VAPID_PRIVATE_KEY`
 - **Subject** → `mailto:your-email@example.com`
@@ -40,14 +42,6 @@ npx web-push generate-vapid-keys
 ---
 
 ### 3️⃣ GitHub (مجاني - 1 دقيقة)
-
-```bash
-git init
-git add .
-git commit -m "Initial commit"
-git remote add origin https://github.com/YOUR_USERNAME/Royal-chat.git
-git push -u origin main
-```
 
 ---
 
@@ -111,10 +105,12 @@ git push -u origin main
 ## 🐛 إذا واجهت مشاكل:
 
 1. **WebSocket لا يعمل:**
+
    - تأكد من `NEXT_PUBLIC_WS_URL` يشير إلى Socket.io server
    - تأكد من CORS مضبوط
 
 2. **Push Notifications لا تعمل:**
+
    - تأكد من VAPID keys صحيحة
    - تأكد من HTTPS (مطلوب)
 

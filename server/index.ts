@@ -5,6 +5,7 @@ import cors from 'cors';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
+import crypto from 'crypto';
 import { connectDatabase, User, Conversation, Message, Contact, PushSubscription, Admin, FreeSubscription } from './database.js';
 import { sendOTP, verifyOTP, findUsersByPhoneNumbers } from './auth.js';
 import { sendMessageNotification } from './pushNotifications.js';
@@ -24,7 +25,7 @@ declare const process: {
 const app = express();
 const server = http.createServer(app);
 // Get allowed origins from environment or use defaults
-const allowedOrigins = process.env.ALLOWED_ORIGINS 
+const allowedOrigins = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(',')
   : ["http://localhost:4000", "http://localhost:4001", "http://localhost:3000", "http://localhost:3003"];
 
@@ -55,13 +56,13 @@ app.get('/api/health', (req, res) => {
 app.post('/api/auth/send-otp', async (req, res) => {
   try {
     const { phoneNumber, email } = req.body;
-    
+
     if (!phoneNumber || !email) {
       return res.status(400).json({ success: false, message: 'رقم الهاتف والبريد الإلكتروني مطلوبان' });
     }
 
     const result = await sendOTP(phoneNumber, email);
-    
+
     if (result.success) {
       res.json({ success: true, message: result.message });
     } else {
@@ -76,13 +77,13 @@ app.post('/api/auth/send-otp', async (req, res) => {
 app.post('/api/auth/verify-otp', async (req, res) => {
   try {
     const { phoneNumber, code } = req.body;
-    
+
     if (!phoneNumber || !code) {
       return res.status(400).json({ success: false, message: 'رقم الهاتف وكود التحقق مطلوبان' });
     }
 
     const result = await verifyOTP(phoneNumber, code);
-    
+
     if (result.success) {
       res.json({ success: true, user: result.user, message: result.message });
     } else {
@@ -98,7 +99,7 @@ app.post('/api/auth/verify-otp', async (req, res) => {
 app.post('/api/users/find-by-phones', async (req, res) => {
   try {
     const { phoneNumbers } = req.body;
-    
+
     if (!phoneNumbers || !Array.isArray(phoneNumbers)) {
       return res.status(400).json({ success: false, message: 'قائمة أرقام الهواتف مطلوبة' });
     }
@@ -116,7 +117,7 @@ app.post('/api/users/find-by-phones', async (req, res) => {
 app.post('/api/notifications/subscribe', async (req, res) => {
   try {
     const { userId, subscription, userAgent, deviceInfo } = req.body;
-    
+
     if (!userId || !subscription || !subscription.endpoint) {
       return res.status(400).json({ success: false, message: 'بيانات الاشتراك مطلوبة' });
     }
@@ -129,7 +130,7 @@ app.post('/api/notifications/subscribe', async (req, res) => {
 
     // Check if subscription already exists
     const existingSubscription = await PushSubscription.findOne({ endpoint: subscription.endpoint });
-    
+
     if (existingSubscription) {
       // Update existing subscription
       existingSubscription.userId = userId;
@@ -140,7 +141,7 @@ app.post('/api/notifications/subscribe', async (req, res) => {
       existingSubscription.updatedAt = new Date();
       existingSubscription.lastUsed = new Date();
       await existingSubscription.save();
-      
+
       return res.json({ success: true, message: 'تم تحديث الاشتراك بنجاح', subscription: existingSubscription });
     }
 
@@ -158,7 +159,7 @@ app.post('/api/notifications/subscribe', async (req, res) => {
     });
 
     await newSubscription.save();
-    
+
     console.log(`✅ Push subscription registered for user ${userId}`);
     res.json({ success: true, message: 'تم تسجيل الاشتراك بنجاح', subscription: newSubscription });
   } catch (error: any) {
@@ -171,19 +172,19 @@ app.post('/api/notifications/subscribe', async (req, res) => {
 app.post('/api/notifications/unsubscribe', async (req, res) => {
   try {
     const { userId, endpoint } = req.body;
-    
+
     if (!userId || !endpoint) {
       return res.status(400).json({ success: false, message: 'بيانات إلغاء الاشتراك مطلوبة' });
     }
 
     // Find and deactivate subscription
     const subscription = await PushSubscription.findOne({ userId, endpoint });
-    
+
     if (subscription) {
       subscription.isActive = false;
       subscription.updatedAt = new Date();
       await subscription.save();
-      
+
       console.log(`✅ Push subscription unsubscribed for user ${userId}`);
       res.json({ success: true, message: 'تم إلغاء الاشتراك بنجاح' });
     } else {
@@ -199,9 +200,9 @@ app.post('/api/notifications/unsubscribe', async (req, res) => {
 app.get('/api/notifications/subscriptions/:userId', async (req, res) => {
   try {
     const { userId } = req.params;
-    
+
     const subscriptions = await PushSubscription.find({ userId, isActive: true });
-    
+
     res.json({ success: true, subscriptions });
   } catch (error: any) {
     console.error('Error getting subscriptions:', error);
@@ -219,7 +220,7 @@ function hashPassword(password: string): string {
 app.post('/api/admin/login', async (req, res) => {
   try {
     const { username, password } = req.body;
-    
+
     if (!username || !password) {
       return res.status(400).json({ success: false, message: 'اسم المستخدم وكلمة المرور مطلوبان' });
     }
@@ -272,7 +273,7 @@ app.post('/api/admin/login', async (req, res) => {
 app.get('/api/admin/admins', async (req, res) => {
   try {
     const { ownerId } = req.query;
-    
+
     // Verify owner
     const owner = await Admin.findOne({ userId: ownerId, role: 'owner' });
     if (!owner) {
@@ -280,7 +281,7 @@ app.get('/api/admin/admins', async (req, res) => {
     }
 
     const admins = await Admin.find({ isActive: true }).populate('userId', 'name avatar phoneNumber email');
-    
+
     res.json({
       success: true,
       admins: admins.map(admin => ({
@@ -306,7 +307,7 @@ app.get('/api/admin/admins', async (req, res) => {
 app.post('/api/admin/create', async (req, res) => {
   try {
     const { ownerId, username, password, name, userId, permissions } = req.body;
-    
+
     if (!ownerId || !username || !password || !name || !userId) {
       return res.status(400).json({ success: false, message: 'جميع الحقول مطلوبة' });
     }
@@ -379,7 +380,7 @@ app.put('/api/admin/:adminId/permissions', async (req, res) => {
   try {
     const { adminId } = req.params;
     const { ownerId, permissions } = req.body;
-    
+
     if (!ownerId || !permissions) {
       return res.status(400).json({ success: false, message: 'البيانات مطلوبة' });
     }
@@ -418,7 +419,7 @@ app.delete('/api/admin/:adminId', async (req, res) => {
   try {
     const { adminId } = req.params;
     const { ownerId } = req.body;
-    
+
     if (!ownerId) {
       return res.status(400).json({ success: false, message: 'معرف المالك مطلوب' });
     }
@@ -454,7 +455,7 @@ app.delete('/api/admin/:adminId', async (req, res) => {
 app.post('/api/admin/grant-free-subscription', async (req, res) => {
   try {
     const { adminId, userId, reason, expiresAt } = req.body;
-    
+
     if (!adminId || !userId) {
       return res.status(400).json({ success: false, message: 'معرف الأدمن والمستخدم مطلوبان' });
     }
@@ -511,7 +512,7 @@ app.post('/api/admin/grant-free-subscription', async (req, res) => {
 app.post('/api/admin/revoke-free-subscription', async (req, res) => {
   try {
     const { adminId, userId } = req.body;
-    
+
     if (!adminId || !userId) {
       return res.status(400).json({ success: false, message: 'معرف الأدمن والمستخدم مطلوبان' });
     }
@@ -546,9 +547,9 @@ app.post('/api/admin/revoke-free-subscription', async (req, res) => {
 app.get('/api/subscription/free/:userId', async (req, res) => {
   try {
     const { userId } = req.params;
-    
+
     const subscription = await FreeSubscription.findOne({ userId, status: 'active' });
-    
+
     if (!subscription) {
       return res.json({ success: true, hasFreeSubscription: false });
     }
@@ -579,7 +580,7 @@ app.get('/api/subscription/free/:userId', async (req, res) => {
 app.get('/api/admin/users', async (req, res) => {
   try {
     const { adminId, page = 1, limit = 50, search = '' } = req.query;
-    
+
     if (!adminId) {
       return res.status(400).json({ success: false, message: 'معرف الأدمن مطلوب' });
     }
@@ -718,7 +719,7 @@ io.on('connection', (socket) => {
     try {
       const { userId } = data;
       console.log(`📋 Requesting conversations for user: ${userId}`);
-      
+
       // Get conversations from database where user is a participant
       const userConversations = await Conversation.find({
         participants: { $in: [userId] }
@@ -737,7 +738,7 @@ io.on('connection', (socket) => {
 
       // Convert to format expected by client
       const conversationsList = userConversations.map(conv => {
-        const participants = Array.isArray(conv.participants) 
+        const participants = Array.isArray(conv.participants)
           ? conv.participants.map((p: any) => ({
               id: p._id?.toString() || p.id || p.toString(),
               name: p.name || 'Unknown',
@@ -781,7 +782,7 @@ io.on('connection', (socket) => {
     try {
       const { conversationId, userId, limit = 100 } = data;
       console.log(`📨 Requesting messages for conversation: ${conversationId}`);
-      
+
       // Get messages from database
       const dbMessages = await Message.find({
         conversationId: conversationId
@@ -798,7 +799,7 @@ io.on('connection', (socket) => {
       const messagesList = dbMessages.map(msg => {
         const sender = msg.senderId as any;
         const senderId = sender?._id?.toString() || sender?.id || msg.senderId?.toString() || msg.senderId;
-        
+
         return {
           id: msg._id?.toString() || msg.id,
           conversationId: msg.conversationId?.toString() || msg.conversationId,
@@ -837,9 +838,9 @@ io.on('connection', (socket) => {
     const userNameEffect = typeof data === 'object' ? data.userNameEffect : undefined;
     const userStatus = typeof data === 'object' ? data.userStatus : 'online';
     const isPremiumSubscriber = typeof data === 'object' ? data.isPremiumSubscriber : false;
-    
+
     socket.join(conversationId);
-    
+
     if (userId && userName) {
       // Store user data for this room
       if (!roomUserData.has(conversationId)) {
@@ -857,21 +858,21 @@ io.on('connection', (socket) => {
         socketId: socket.id,
         joinedAt: new Date()
       });
-      
+
       activeUsers.set(socket.id, { userId, userName, socketId: socket.id, joinedAt: new Date() });
-      
+
       // Notify others that user joined with complete info (real-time)
-      socket.to(conversationId).emit('user_joined', { 
-        userId, 
+      socket.to(conversationId).emit('user_joined', {
+        userId,
         userName,
         userAvatar: userAvatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${userId}`,
         userFrame: userFrame || null,
         userNameEffect: userNameEffect || null,
         userStatus: userStatus || 'online',
         isPremiumSubscriber: isPremiumSubscriber || false,
-        timestamp: new Date() 
+        timestamp: new Date()
       });
-      
+
              // Send current active users to the new user with complete info
              const usersInRoom = Array.from(io.sockets.adapter.rooms.get(conversationId) || [])
                .map(socketId => {
@@ -897,9 +898,9 @@ io.on('connection', (socket) => {
                  };
                })
                .filter((u): u is any => u !== null);
-             
+
              socket.emit('active_users', usersInRoom);
-             
+
              // Send conversation message history to the new user (real-time sync)
              const messages = conversationMessages.get(conversationId) || [];
              if (messages.length > 0) {
@@ -912,17 +913,17 @@ io.on('connection', (socket) => {
                console.log(`📨 Sent ${recentMessages.length} messages from conversation ${conversationId} to user ${userName}`);
              }
            }
-    
+
     console.log(`User ${userName || userId || 'unknown'} joined conversation: ${conversationId} with avatar: ${userAvatar || 'default'}`);
   });
 
   // Send and receive messages - Real-time messaging
-  socket.on('send_message', (message) => {
+  socket.on('send_message', async (message) => {
     // Use the timestamp from the message (actual time when sent), or current time if not provided
-    const messageTimestamp = message.timestamp 
+    const messageTimestamp = message.timestamp
       ? (typeof message.timestamp === 'string' ? new Date(message.timestamp) : message.timestamp)
       : new Date();
-    
+
     // Update timestamp and ensure all required fields
     const messageWithTimestamp = {
       ...message,
@@ -938,7 +939,7 @@ io.on('connection', (socket) => {
       // Ensure attachments are included
       attachments: message.attachments || []
     };
-    
+
     // Store the message in conversation history
     const conversationId = message.conversationId;
     if (!conversationMessages.has(conversationId)) {
@@ -958,11 +959,11 @@ io.on('connection', (socket) => {
     if (messages.length > 1000) {
       messages.splice(0, messages.length - 1000);
     }
-    
+
     // Broadcast the message to everyone in the conversation room (including sender)
     // This ensures all users see the message in real-time with updated status
     io.to(conversationId).emit('receive_message', messageWithTimestamp);
-    
+
     console.log(`✅ Message sent in conversation ${conversationId} by user ${message.senderId || message.senderName}: "${message.content.substring(0, 50)}..."`);
     console.log(`   Broadcasting to all users in room: ${conversationId}`);
     console.log(`   Total messages in conversation: ${messages.length}`);
@@ -972,10 +973,10 @@ io.on('connection', (socket) => {
     try {
       const conversation = await Conversation.findById(conversationId).populate('participants');
       if (conversation && conversation.participants) {
-        const participants = Array.isArray(conversation.participants) 
-          ? conversation.participants 
+        const participants = Array.isArray(conversation.participants)
+          ? conversation.participants
           : [conversation.participants];
-        
+
         // Get users currently in the conversation room (online and viewing)
         const socketsInRoom = await io.in(conversationId).fetchSockets();
         const onlineUserIds = new Set(
@@ -988,10 +989,10 @@ io.on('connection', (socket) => {
         // Send push notifications to offline users or users not viewing this conversation
         for (const participant of participants) {
           const participantId = participant._id?.toString() || participant.toString();
-          
+
           // Skip sender
           if (participantId === message.senderId) continue;
-          
+
           // Skip if user is online and viewing this conversation
           if (onlineUserIds.has(participantId)) continue;
 
@@ -1042,7 +1043,7 @@ io.on('connection', (socket) => {
   // Handle message reactions
   socket.on('react_to_message', (data) => {
     const { messageId, emoji, userId, userName, conversationId } = data;
-    
+
     // Broadcast reaction to everyone in the conversation
     io.to(conversationId).emit('reaction_received', {
       messageId,
@@ -1051,14 +1052,14 @@ io.on('connection', (socket) => {
       userName,
       timestamp: new Date()
     });
-    
+
     console.log(`User ${userName} (${userId}) reacted ${emoji} to message ${messageId} in conversation ${conversationId}`);
   });
 
   // Handle message edit
   socket.on('edit_message', (data) => {
     const { messageId, content, conversationId } = data;
-    
+
     // Update message in conversation history
     const messages = conversationMessages.get(conversationId);
     if (messages) {
@@ -1071,21 +1072,21 @@ io.on('connection', (socket) => {
         };
       }
     }
-    
+
     // Broadcast edited message to everyone in the conversation
     io.to(conversationId).emit('message_edited', {
       messageId,
       content,
       timestamp: new Date()
     });
-    
+
     console.log(`Message ${messageId} edited in conversation ${conversationId}`);
   });
 
   // Handle message delete
   socket.on('delete_message', (data) => {
     const { messageId, conversationId } = data;
-    
+
     // Remove message from conversation history
     const messages = conversationMessages.get(conversationId);
     if (messages) {
@@ -1094,13 +1095,13 @@ io.on('connection', (socket) => {
         messages.splice(messageIndex, 1);
       }
     }
-    
+
     // Broadcast message deletion to everyone in the conversation
     io.to(conversationId).emit('message_deleted', {
       messageId,
       timestamp: new Date()
     });
-    
+
     console.log(`Message ${messageId} deleted in conversation ${conversationId}`);
   });
 
@@ -1109,9 +1110,9 @@ io.on('connection', (socket) => {
     socket.leave(conversationId);
     const userInfo = activeUsers.get(socket.id);
     if (userInfo) {
-      socket.to(conversationId).emit('user_left', { 
-        userId: userInfo.userId, 
-        timestamp: new Date() 
+      socket.to(conversationId).emit('user_left', {
+        userId: userInfo.userId,
+        timestamp: new Date()
       });
       activeUsers.delete(socket.id);
     }
@@ -1133,25 +1134,25 @@ io.on('connection', (socket) => {
     try {
       const { Conversation } = await import('./database.js');
       const conversation = await Conversation.findById(data.conversationId);
-      
+
       if (conversation) {
         conversation.isPinned = data.isPinned;
         conversation.updatedAt = new Date();
         await conversation.save();
-        
+
         // Notify all participants
         socket.to(data.conversationId).emit('conversation_pinned', {
           conversationId: data.conversationId,
           isPinned: data.isPinned,
           userId: data.userId
         });
-        
+
         socket.emit('conversation_pinned', {
           conversationId: data.conversationId,
           isPinned: data.isPinned,
           userId: data.userId
         });
-        
+
         console.log(`✅ Conversation ${data.conversationId} ${data.isPinned ? 'pinned' : 'unpinned'}`);
       }
     } catch (error: any) {
@@ -1164,25 +1165,25 @@ io.on('connection', (socket) => {
     try {
       const { Conversation } = await import('./database.js');
       const conversation = await Conversation.findById(data.conversationId);
-      
+
       if (conversation) {
         conversation.isArchived = data.isArchived;
         conversation.updatedAt = new Date();
         await conversation.save();
-        
+
         // Notify all participants
         socket.to(data.conversationId).emit('conversation_archived', {
           conversationId: data.conversationId,
           isArchived: data.isArchived,
           userId: data.userId
         });
-        
+
         socket.emit('conversation_archived', {
           conversationId: data.conversationId,
           isArchived: data.isArchived,
           userId: data.userId
         });
-        
+
         console.log(`✅ Conversation ${data.conversationId} ${data.isArchived ? 'archived' : 'unarchived'}`);
       }
     } catch (error: any) {
@@ -1194,11 +1195,11 @@ io.on('connection', (socket) => {
   socket.on('create_group', async (data: { name: string; description: string; memberIds: string[]; creatorId: string }) => {
     try {
       const { Conversation, User } = await import('./database.js');
-      
+
       // Get all participants including creator
       const allMemberIds = [data.creatorId, ...data.memberIds];
       const participants = await User.find({ _id: { $in: allMemberIds } });
-      
+
       if (participants.length < 2) {
         socket.emit('group_created', { success: false, error: 'At least 2 members required' });
         return;
@@ -1247,23 +1248,23 @@ io.on('connection', (socket) => {
     try {
       const { Conversation } = await import('./database.js');
       const conversation = await Conversation.findById(data.conversationId);
-      
+
       if (conversation) {
         conversation.disappearingMessagesTimer = data.timer || 0;
         conversation.updatedAt = new Date();
         await conversation.save();
-        
+
         // Notify all participants
         socket.to(data.conversationId).emit('disappearing_timer_updated', {
           conversationId: data.conversationId,
           timer: data.timer
         });
-        
+
         socket.emit('disappearing_timer_updated', {
           conversationId: data.conversationId,
           timer: data.timer
         });
-        
+
         console.log(`✅ Disappearing timer set to ${data.timer || 0}s for conversation ${data.conversationId}`);
       }
     } catch (error: any) {
@@ -1272,16 +1273,16 @@ io.on('connection', (socket) => {
   });
 
   // Handle scheduled message
-  socket.on('schedule_message', async (data: { 
-    conversationId: string; 
-    senderId: string; 
-    content: string; 
+  socket.on('schedule_message', async (data: {
+    conversationId: string;
+    senderId: string;
+    content: string;
     scheduledFor: Date;
     attachments?: any[];
   }) => {
     try {
       const { Message } = await import('./database.js');
-      
+
       const message = new Message({
         conversationId: data.conversationId,
         senderId: data.senderId,
@@ -1294,13 +1295,13 @@ io.on('connection', (socket) => {
       });
 
       await message.save();
-      
+
       socket.emit('message_scheduled', {
         success: true,
         messageId: message._id.toString(),
         scheduledFor: message.scheduledFor
       });
-      
+
       console.log(`✅ Message scheduled for ${data.scheduledFor} in conversation ${data.conversationId}`);
     } catch (error: any) {
       console.error('Error scheduling message:', error);
@@ -1321,14 +1322,14 @@ io.on('connection', (socket) => {
   socket.on('join_voice_chat', (data: { userId: string; userName: string; conversationId: string }) => {
     const { userId, userName, conversationId } = data;
     socket.join(`voice_${conversationId}`);
-    
+
     // Notify others in voice chat
     socket.to(`voice_${conversationId}`).emit('voice_chat_joined', {
       userId,
       userName,
       timestamp: new Date()
     });
-    
+
     console.log(`User ${userName} (${userId}) joined voice chat in conversation ${conversationId}`);
   });
 
@@ -1336,13 +1337,13 @@ io.on('connection', (socket) => {
   socket.on('leave_voice_chat', (data: { userId: string; conversationId: string }) => {
     const { userId, conversationId } = data;
     socket.leave(`voice_${conversationId}`);
-    
+
     // Notify others in voice chat
     socket.to(`voice_${conversationId}`).emit('voice_chat_left', {
       userId,
       timestamp: new Date()
     });
-    
+
     console.log(`User ${userId} left voice chat in conversation ${conversationId}`);
   });
 
@@ -1355,7 +1356,7 @@ io.on('connection', (socket) => {
     timestamp: Date;
   }) => {
     const { userId, userName, conversationId, audioData } = data;
-    
+
     // Broadcast audio chunk to all other users in the voice chat room (except sender)
     socket.to(`voice_${conversationId}`).emit('voice_audio_chunk', {
       userId,
@@ -1363,7 +1364,7 @@ io.on('connection', (socket) => {
       audioData,
       timestamp: new Date()
     });
-    
+
     // Log for debugging (only first few chunks to avoid spam)
     if (Math.random() < 0.01) { // Log 1% of chunks
       console.log(`🎤 Audio chunk from ${userName} (${userId}) in conversation ${conversationId}`);
@@ -1385,7 +1386,7 @@ io.on('connection', (socket) => {
   // Register user
   socket.on('register_user', (data: { userId: string; phoneNumber: string; name: string; avatar: string }) => {
     const { userId, phoneNumber, name, avatar } = data;
-    
+
     // Update or create user
     const existingUser = registeredUsers.get(userId);
     registeredUsers.set(userId, {
@@ -1412,7 +1413,7 @@ io.on('connection', (socket) => {
   // Search user by phone number
   socket.on('search_user', (data: { phoneNumber: string }, callback) => {
     const { phoneNumber } = data;
-    
+
     // Find user by phone number
     const foundUser = Array.from(registeredUsers.values()).find(
       u => u.phoneNumber === phoneNumber
@@ -1446,49 +1447,49 @@ io.on('connection', (socket) => {
       lastSeen: u.lastSeen,
       isContact: false
     }));
-    
+
     socket.emit('all_users', allUsers);
   });
 
   // Add contact
   socket.on('add_contact', (data: { userId: string; contactId: string }) => {
     const { userId, contactId } = data;
-    
+
     if (!userContacts.has(userId)) {
       userContacts.set(userId, new Set());
     }
     userContacts.get(userId)!.add(contactId);
-    
+
     console.log(`User ${userId} added contact ${contactId}`);
   });
 
   // Remove contact
   socket.on('remove_contact', (data: { userId: string; contactId: string }) => {
     const { userId, contactId } = data;
-    
+
     if (userContacts.has(userId)) {
       userContacts.get(userId)!.delete(contactId);
     }
-    
+
     console.log(`User ${userId} removed contact ${contactId}`);
   });
 
   // Send invitation to contact
-  socket.on('send_invitation', (data: { 
-    fromUserId: string; 
-    fromUserName: string; 
+  socket.on('send_invitation', (data: {
+    fromUserId: string;
+    fromUserName: string;
     fromUserPhone: string;
     toPhoneNumber: string;
     toName: string;
     timestamp: Date;
   }) => {
     const { fromUserId, fromUserName, fromUserPhone, toPhoneNumber, toName } = data;
-    
+
     // Check if the invited user is registered
     const invitedUser = Array.from(registeredUsers.values()).find(
-      u => u.phoneNumber === toPhoneNumber || u.phoneNumber.replace(/[\s\-\(\)]/g, '') === toPhoneNumber.replace(/[\s\-\(\)]/g, '')
+      u => u.phoneNumber === toPhoneNumber || u.phoneNumber.replace(/[\s\-()]/g, '') === toPhoneNumber.replace(/[\s\-()]/g, '')
     );
-    
+
     if (invitedUser) {
       // User is already registered - notify them about the invitation
       if (invitedUser.socketId) {
@@ -1508,7 +1509,7 @@ io.on('connection', (socket) => {
       console.log(`Invitation sent to unregistered user ${toName} (${toPhoneNumber}) from ${fromUserName}`);
       console.log(`   User will receive invitation when they register with this phone number`);
     }
-    
+
     // Broadcast invitation event (for logging/analytics)
     io.emit('invitation_sent', {
       fromUserId,
@@ -1524,19 +1525,19 @@ io.on('connection', (socket) => {
   socket.on('update_user_profile', (data: { userId: string; name?: string; avatar?: string }) => {
     const { userId, name, avatar } = data;
     const user = registeredUsers.get(userId);
-    
+
     if (user) {
       if (name) user.name = name;
       if (avatar) user.avatar = avatar;
       registeredUsers.set(userId, user);
-      
+
       // Broadcast profile update to all users
       io.emit('user_profile_update', {
         userId,
         name,
         avatar
       });
-      
+
       console.log(`User ${userId} updated profile: name=${name}, avatar=${avatar}`);
     }
   });
@@ -1544,7 +1545,7 @@ io.on('connection', (socket) => {
   // Update user frame (for premium chat)
   socket.on('update_user_frame', (data: { userId: string; userName: string; frameConfig: any; conversationId: string }) => {
     const { userId, userName, frameConfig, conversationId } = data;
-    
+
     // Update stored user data in room
     if (roomUserData.has(conversationId)) {
       const userDataMap = roomUserData.get(conversationId)!;
@@ -1554,7 +1555,7 @@ io.on('connection', (socket) => {
         userDataMap.set(userId, userData);
       }
     }
-    
+
     // Broadcast frame update to all users in the conversation (real-time)
     io.to(conversationId).emit('user_frame_updated', {
       userId,
@@ -1562,14 +1563,14 @@ io.on('connection', (socket) => {
       frameConfig,
       timestamp: new Date()
     });
-    
+
     console.log(`User ${userName} (${userId}) updated frame in conversation ${conversationId}`);
   });
 
   // Update user name effect (for premium chat)
   socket.on('update_user_name_effect', (data: { userId: string; userName: string; nameEffect: any; conversationId: string }) => {
     const { userId, userName, nameEffect, conversationId } = data;
-    
+
     // Update stored user data in room
     if (roomUserData.has(conversationId)) {
       const userDataMap = roomUserData.get(conversationId)!;
@@ -1579,7 +1580,7 @@ io.on('connection', (socket) => {
         userDataMap.set(userId, userData);
       }
     }
-    
+
     // Broadcast name effect update to all users in the conversation (real-time)
     io.to(conversationId).emit('user_name_effect_updated', {
       userId,
@@ -1587,7 +1588,7 @@ io.on('connection', (socket) => {
       nameEffect,
       timestamp: new Date()
     });
-    
+
     console.log(`User ${userName} (${userId}) updated name effect in conversation ${conversationId}`);
   });
 
@@ -1595,18 +1596,18 @@ io.on('connection', (socket) => {
   socket.on('leave_conversation', (conversationId) => {
     socket.leave(conversationId);
     const userInfo = activeUsers.get(socket.id);
-    
+
     // Remove user data from room
     if (roomUserData.has(conversationId)) {
       if (userInfo) {
         roomUserData.get(conversationId)!.delete(userInfo.userId);
       }
     }
-    
+
     if (userInfo) {
-      socket.to(conversationId).emit('user_left', { 
-        userId: userInfo.userId, 
-        timestamp: new Date() 
+      socket.to(conversationId).emit('user_left', {
+        userId: userInfo.userId,
+        timestamp: new Date()
       });
     }
     console.log(`User left conversation: ${conversationId}`);
@@ -1615,7 +1616,7 @@ io.on('connection', (socket) => {
   // Handle disconnection
   socket.on('disconnect', () => {
     const userInfo = activeUsers.get(socket.id);
-    
+
     // Update user status to offline
     const user = Array.from(registeredUsers.values()).find(u => u.socketId === socket.id);
     if (user) {
@@ -1623,7 +1624,7 @@ io.on('connection', (socket) => {
       user.lastSeen = new Date();
       user.socketId = undefined;
       registeredUsers.set(user.id, user);
-      
+
       // Broadcast status update
       io.emit('user_status_update', {
         userId: user.id,
@@ -1631,7 +1632,7 @@ io.on('connection', (socket) => {
         lastSeen: user.lastSeen
       });
     }
-    
+
     if (userInfo) {
       // Notify all rooms that user left and clean up room data
       socket.rooms.forEach(room => {
@@ -1639,7 +1640,7 @@ io.on('connection', (socket) => {
           userId: userInfo.userId,
           timestamp: new Date()
         });
-        
+
         // Clean up room user data
         if (roomUserData.has(room)) {
           roomUserData.get(room)!.delete(userInfo.userId);

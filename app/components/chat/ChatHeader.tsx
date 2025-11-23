@@ -32,25 +32,25 @@ export function ChatHeader({ conversation, currentUser, onBack, onSearchClick, o
   const { t, dir } = useLanguage();
   const [isVoiceCallOpen, setIsVoiceCallOpen] = useState(false);
   const [isVideoCallOpen, setIsVideoCallOpen] = useState(false);
-  
+
   // Handle participants - they can be string[] or User[]
-  const participants = Array.isArray(conversation.participants) 
-    ? conversation.participants 
+  const participants = Array.isArray(conversation.participants)
+    ? conversation.participants
     : [];
-  
+
   // Find other user - participants might be string IDs or User objects
   const otherUser = participants.find((p: string | User) => {
     const id = typeof p === 'string' ? p : p.id;
     return id !== currentUser.id;
   }) as User | string | undefined;
-  
+
   // For now, we'll use the conversation name or a default
   const isGroup = conversation.isGroup || false;
-  
+
   // Get display name and avatar from the other user
   let displayName: string;
   let displayAvatar: string | undefined;
-  
+
   if (isGroup) {
     displayName = conversation.name || (dir === 'rtl' ? 'مجموعة' : 'Group');
     displayAvatar = conversation.avatar;
@@ -73,15 +73,15 @@ export function ChatHeader({ conversation, currentUser, onBack, onSearchClick, o
       displayAvatar = conversation.avatar;
     }
   }
-  
+
   const participantCount = participants.length;
-  
+
   // For status, we can't determine it from string IDs, so we'll show offline by default
   const isOnline = typeof otherUser !== 'string' && otherUser && typeof otherUser === 'object' && otherUser.status === 'online';
 
   // Get caller info for calls
   const otherUserId = typeof otherUser === 'string' ? otherUser : otherUser?.id;
-  const caller = typeof otherUserId === 'string' 
+  const caller = typeof otherUserId === 'string'
     ? { id: otherUserId, name: displayName || '', avatar: displayAvatar || '' }
     : { id: otherUserId || '', name: displayName || '', avatar: displayAvatar || '' };
 
@@ -135,11 +135,11 @@ export function ChatHeader({ conversation, currentUser, onBack, onSearchClick, o
         </div>
 
         <div className={`flex items-center gap-1 sm:gap-2 flex-shrink-0 ${dir === 'rtl' ? 'flex-row-reverse' : ''}`}>
-          <Button 
-            type="button" 
-            size="icon" 
-            variant="ghost" 
-            className="rounded-full h-10 w-10 sm:h-9 sm:w-9 touch-manipulation min-h-[44px] min-w-[44px]" 
+          <Button
+            type="button"
+            size="icon"
+            variant="ghost"
+            className="rounded-full h-10 w-10 sm:h-9 sm:w-9 touch-manipulation min-h-[44px] min-w-[44px]"
             title={t('common.search')}
             onClick={onSearchClick}
             style={{ WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation' }}
@@ -148,22 +148,22 @@ export function ChatHeader({ conversation, currentUser, onBack, onSearchClick, o
           </Button>
           {!isGroup && (
             <>
-              <Button 
-                type="button" 
-                size="icon" 
-                variant="ghost" 
-                className="rounded-full h-10 w-10 sm:h-9 sm:w-9 touch-manipulation min-h-[44px] min-w-[44px]" 
+              <Button
+                type="button"
+                size="icon"
+                variant="ghost"
+                className="rounded-full h-10 w-10 sm:h-9 sm:w-9 touch-manipulation min-h-[44px] min-w-[44px]"
                 title={dir === 'rtl' ? 'مكالمة صوتية' : 'Voice Call'}
                 onClick={() => setIsVoiceCallOpen(true)}
                 style={{ WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation' }}
               >
                 <Phone className="w-5 h-5 sm:w-4 sm:h-4" />
               </Button>
-              <Button 
-                type="button" 
-                size="icon" 
-                variant="ghost" 
-                className="rounded-full h-10 w-10 sm:h-9 sm:w-9 touch-manipulation min-h-[44px] min-w-[44px]" 
+              <Button
+                type="button"
+                size="icon"
+                variant="ghost"
+                className="rounded-full h-10 w-10 sm:h-9 sm:w-9 touch-manipulation min-h-[44px] min-w-[44px]"
                 title={dir === 'rtl' ? 'مكالمة فيديو' : 'Video Call'}
                 onClick={() => setIsVideoCallOpen(true)}
                 style={{ WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation' }}
@@ -175,11 +175,11 @@ export function ChatHeader({ conversation, currentUser, onBack, onSearchClick, o
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button 
-                type="button" 
-                size="icon" 
-                variant="ghost" 
-                className="rounded-full h-10 w-10 sm:h-9 sm:w-9 touch-manipulation min-h-[44px] min-w-[44px]" 
+              <Button
+                type="button"
+                size="icon"
+                variant="ghost"
+                className="rounded-full h-10 w-10 sm:h-9 sm:w-9 touch-manipulation min-h-[44px] min-w-[44px]"
                 title={dir === 'rtl' ? 'المزيد' : 'More'}
                 style={{ WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation' }}
               >

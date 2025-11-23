@@ -1,0 +1,65 @@
+==========================================
+نسخ سريع - جميع المتغيرات
+==========================================
+
+الرابط: royal-chat-production-19b3.up.railway.app
+
+==========================================
+VERCEL - المتغيرات الأساسية (6 متغيرات)
+==========================================
+
+1. MONGODB_URI
+mongodb+srv://mazenjamal19991_db_user:4m49vnFecshgUVCz@royal-chat-cluster.jz1fkos.mongodb.net/royal-chat?retryWrites=true&w=majority
+
+2. VAPID_PUBLIC_KEY
+BHgW01VE4r4B2LrclRaxqar0nq4oNQSp3rX-oogWAd4mM8LP4Vi4LAjiuSXwxtuJ8a_OP2bCPCsN-rMENZu-BDM
+
+3. VAPID_PRIVATE_KEY
+nbulvES956CiVJi2Ugurcs17MQ99wAyjmmcvpJyz0H0
+
+4. VAPID_SUBJECT
+mailto:mazenjamal19991@gmail.com
+
+5. NEXT_PUBLIC_VAPID_PUBLIC_KEY
+BHgW01VE4r4B2LrclRaxqar0nq4oNQSp3rX-oogWAd4mM8LP4Vi4LAjiuSXwxtuJ8a_OP2bCPCsN-rMENZu-BDM
+
+6. NEXT_PUBLIC_WS_URL
+wss://royal-chat-production-19b3.up.railway.app
+
+==========================================
+RAILWAY - المتغيرات الأساسية (6 متغيرات)
+==========================================
+
+1. MONGODB_URI
+mongodb+srv://mazenjamal19991_db_user:4m49vnFecshgUVCz@royal-chat-cluster.jz1fkos.mongodb.net/royal-chat?retryWrites=true&w=majority
+
+2. VAPID_PUBLIC_KEY
+BHgW01VE4r4B2LrclRaxqar0nq4oNQSp3rX-oogWAd4mM8LP4Vi4LAjiuSXwxtuJ8a_OP2bCPCsN-rMENZu-BDM
+
+3. VAPID_PRIVATE_KEY
+nbulvES956CiVJi2Ugurcs17MQ99wAyjmmcvpJyz0H0
+
+4. VAPID_SUBJECT
+mailto:mazenjamal19991@gmail.com
+
+5. PORT
+8080
+
+6. NODE_ENV
+production
+
+7. ALLOWED_ORIGINS
+https://royal-chat-production-19b3.up.railway.app,https://royal-chat.vercel.app
+
+==========================================
+بعد النشر على Vercel - أضف هذه:
+==========================================
+
+في VERCEL:
+- ALLOWED_ORIGINS = https://YOUR_VERCEL_LINK.vercel.app
+- NEXT_PUBLIC_APP_URL = https://YOUR_VERCEL_LINK.vercel.app
+
+في RAILWAY:
+- أضف رابط Vercel في ALLOWED_ORIGINS (مفصول بفاصلة)
+
+==========================================

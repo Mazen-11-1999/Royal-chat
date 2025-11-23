@@ -7,14 +7,14 @@ import { Badge } from '@/ui/badge';
 import { Switch } from '@/ui/switch';
 import { Label } from '@/ui/label';
 import { ScrollArea } from '@/ui/scroll-area';
-import { 
-  Crown, 
-  Settings, 
-  Users, 
-  MessageSquare, 
-  Eye, 
-  EyeOff, 
-  LogOut, 
+import {
+  Crown,
+  Settings,
+  Users,
+  MessageSquare,
+  Eye,
+  EyeOff,
+  LogOut,
   Shield,
   BarChart3,
   Database,
@@ -55,11 +55,11 @@ export function AdminDashboard() {
     activeChats: 89,
     messagesToday: 12345
   });
-  
+
   // Name editing state
   const [isEditingName, setIsEditingName] = useState(false);
   const [newName, setNewName] = useState(user?.name || '');
-  
+
   // Admin management state
   const [admins, setAdmins] = useState<AdminUser[]>([]);
   const [showCreateAdminDialog, setShowCreateAdminDialog] = useState(false);
@@ -108,7 +108,7 @@ export function AdminDashboard() {
             {dir === 'rtl' ? 'يرجى تسجيل الدخول' : 'Please Login'}
           </h3>
           <p className="text-muted-foreground mb-4">
-            {dir === 'rtl' 
+            {dir === 'rtl'
               ? 'يجب أن تسجل دخول كمالك أو أدمن للوصول إلى لوحة التحكم'
               : 'You must login as owner or admin to access the admin panel'}
           </p>
@@ -218,7 +218,7 @@ export function AdminDashboard() {
             </Button>
           </div>
         </div>
-        <PremiumChatInterface 
+        <PremiumChatInterface
           currentUser={{
             id: user.id,
             name: user.name,
@@ -351,7 +351,7 @@ export function AdminDashboard() {
               </div>
               <CardDescription>
                 {user.isInvisible
-                  ? (dir === 'rtl' 
+                  ? (dir === 'rtl'
                       ? 'أنت مخفي حالياً - لا أحد يستطيع رؤيتك'
                       : 'You are currently invisible - no one can see you')
                   : (dir === 'rtl'
@@ -597,7 +597,7 @@ export function AdminDashboard() {
                             dir={dir}
                           />
                           <p className="text-xs text-muted-foreground">
-                            {dir === 'rtl' 
+                            {dir === 'rtl'
                               ? 'معرف المستخدم الذي سيصبح أدمن (يجب أن يكون موجوداً في قاعدة البيانات)'
                               : 'User ID that will become admin (must exist in database)'}
                           </p>
@@ -903,4 +903,3 @@ export function AdminDashboard() {
     </div>
   );
 }
-

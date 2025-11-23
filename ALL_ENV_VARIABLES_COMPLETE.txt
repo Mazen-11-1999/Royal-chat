@@ -1,0 +1,209 @@
+==========================================
+جميع المتغيرات البيئية - كاملة وجاهزة
+==========================================
+
+الرابط من Railway: royal-chat-production-19b3.up.railway.app
+
+==========================================
+المتغيرات لـ VERCEL (Next.js Frontend)
+==========================================
+
+اذهب إلى: https://vercel.com → مشروعك → Settings → Environment Variables
+
+─────────────────────────────────────────
+المتغير 1: MONGODB_URI
+─────────────────────────────────────────
+Name: MONGODB_URI
+Value: mongodb+srv://mazenjamal19991_db_user:4m49vnFecshgUVCz@royal-chat-cluster.jz1fkos.mongodb.net/royal-chat?retryWrites=true&w=majority
+Environment: Production (و Preview و Development إذا أردت)
+
+─────────────────────────────────────────
+المتغير 2: VAPID_PUBLIC_KEY
+─────────────────────────────────────────
+Name: VAPID_PUBLIC_KEY
+Value: BHgW01VE4r4B2LrclRaxqar0nq4oNQSp3rX-oogWAd4mM8LP4Vi4LAjiuSXwxtuJ8a_OP2bCPCsN-rMENZu-BDM
+Environment: Production (و Preview و Development إذا أردت)
+
+─────────────────────────────────────────
+المتغير 3: VAPID_PRIVATE_KEY
+─────────────────────────────────────────
+Name: VAPID_PRIVATE_KEY
+Value: nbulvES956CiVJi2Ugurcs17MQ99wAyjmmcvpJyz0H0
+Environment: Production (و Preview و Development إذا أردت)
+
+─────────────────────────────────────────
+المتغير 4: VAPID_SUBJECT
+─────────────────────────────────────────
+Name: VAPID_SUBJECT
+Value: mailto:mazenjamal19991@gmail.com
+Environment: Production (و Preview و Development إذا أردت)
+
+─────────────────────────────────────────
+المتغير 5: NEXT_PUBLIC_VAPID_PUBLIC_KEY
+─────────────────────────────────────────
+Name: NEXT_PUBLIC_VAPID_PUBLIC_KEY
+Value: BHgW01VE4r4B2LrclRaxqar0nq4oNQSp3rX-oogWAd4mM8LP4Vi4LAjiuSXwxtuJ8a_OP2bCPCsN-rMENZu-BDM
+Environment: Production (و Preview و Development إذا أردت)
+ملاحظة: نفس قيمة VAPID_PUBLIC_KEY
+
+─────────────────────────────────────────
+المتغير 6: NEXT_PUBLIC_WS_URL
+─────────────────────────────────────────
+Name: NEXT_PUBLIC_WS_URL
+Value: wss://royal-chat-production-19b3.up.railway.app
+Environment: Production (و Preview و Development إذا أردت)
+ملاحظة: هذا رابط Socket.io Server على Railway
+
+─────────────────────────────────────────
+المتغير 7: ALLOWED_ORIGINS (اختياري - أضفه بعد النشر)
+─────────────────────────────────────────
+Name: ALLOWED_ORIGINS
+Value: https://royal-chat.vercel.app
+Environment: Production
+ملاحظة: استبدل royal-chat.vercel.app برابط Vercel الفعلي بعد النشر
+
+─────────────────────────────────────────
+المتغير 8: NEXT_PUBLIC_APP_URL (اختياري - أضفه بعد النشر)
+─────────────────────────────────────────
+Name: NEXT_PUBLIC_APP_URL
+Value: https://royal-chat.vercel.app
+Environment: Production
+ملاحظة: استبدل royal-chat.vercel.app برابط Vercel الفعلي بعد النشر
+
+==========================================
+المتغيرات لـ RAILWAY (Socket.io Server)
+==========================================
+
+اذهب إلى: https://railway.app → مشروعك → Variables
+
+─────────────────────────────────────────
+المتغير 1: MONGODB_URI
+─────────────────────────────────────────
+Name: MONGODB_URI
+Value: mongodb+srv://mazenjamal19991_db_user:4m49vnFecshgUVCz@royal-chat-cluster.jz1fkos.mongodb.net/royal-chat?retryWrites=true&w=majority
+
+─────────────────────────────────────────
+المتغير 2: VAPID_PUBLIC_KEY
+─────────────────────────────────────────
+Name: VAPID_PUBLIC_KEY
+Value: BHgW01VE4r4B2LrclRaxqar0nq4oNQSp3rX-oogWAd4mM8LP4Vi4LAjiuSXwxtuJ8a_OP2bCPCsN-rMENZu-BDM
+
+─────────────────────────────────────────
+المتغير 3: VAPID_PRIVATE_KEY
+─────────────────────────────────────────
+Name: VAPID_PRIVATE_KEY
+Value: nbulvES956CiVJi2Ugurcs17MQ99wAyjmmcvpJyz0H0
+
+─────────────────────────────────────────
+المتغير 4: VAPID_SUBJECT
+─────────────────────────────────────────
+Name: VAPID_SUBJECT
+Value: mailto:mazenjamal19991@gmail.com
+
+─────────────────────────────────────────
+المتغير 5: PORT
+─────────────────────────────────────────
+Name: PORT
+Value: 8080
+
+─────────────────────────────────────────
+المتغير 6: NODE_ENV
+─────────────────────────────────────────
+Name: NODE_ENV
+Value: production
+
+─────────────────────────────────────────
+المتغير 7: ALLOWED_ORIGINS
+─────────────────────────────────────────
+Name: ALLOWED_ORIGINS
+Value: https://royal-chat-production-19b3.up.railway.app,https://royal-chat.vercel.app
+ملاحظة: أضف رابط Vercel بعد النشر (مفصول بفاصلة)
+
+─────────────────────────────────────────
+المتغير 8: NEXT_PUBLIC_APP_URL (اختياري)
+─────────────────────────────────────────
+Name: NEXT_PUBLIC_APP_URL
+Value: https://royal-chat-production-19b3.up.railway.app
+
+─────────────────────────────────────────
+المتغير 9: NEXT_PUBLIC_WS_URL (اختياري)
+─────────────────────────────────────────
+Name: NEXT_PUBLIC_WS_URL
+Value: wss://royal-chat-production-19b3.up.railway.app
+
+==========================================
+ملخص سريع - أين توضع كل متغير
+==========================================
+
+VERCEL (Next.js Frontend):
+──────────────────────────
+✅ MONGODB_URI
+✅ VAPID_PUBLIC_KEY
+✅ VAPID_PRIVATE_KEY
+✅ VAPID_SUBJECT
+✅ NEXT_PUBLIC_VAPID_PUBLIC_KEY
+✅ NEXT_PUBLIC_WS_URL = wss://royal-chat-production-19b3.up.railway.app
+⏳ ALLOWED_ORIGINS (بعد النشر)
+⏳ NEXT_PUBLIC_APP_URL (بعد النشر)
+
+RAILWAY (Socket.io Server):
+───────────────────────────
+✅ MONGODB_URI
+✅ VAPID_PUBLIC_KEY
+✅ VAPID_PRIVATE_KEY
+✅ VAPID_SUBJECT
+✅ PORT = 8080
+✅ NODE_ENV = production
+✅ ALLOWED_ORIGINS = https://royal-chat-production-19b3.up.railway.app,https://royal-chat.vercel.app
+⏳ NEXT_PUBLIC_APP_URL (اختياري)
+⏳ NEXT_PUBLIC_WS_URL (اختياري)
+
+==========================================
+الخطوات السريعة
+==========================================
+
+1. في VERCEL:
+   - اذهب إلى Settings → Environment Variables
+   - أضف المتغيرات من 1 إلى 6 (الأساسية)
+   - اختر Environment: Production
+   - احفظ
+
+2. في RAILWAY:
+   - اذهب إلى Variables
+   - أضف جميع المتغيرات المذكورة أعلاه
+   - تأكد من Start Command: npm run start:server
+   - احفظ
+
+3. بعد النشر على Vercel:
+   - احصل على رابط Vercel (مثل: royal-chat.vercel.app)
+   - أضف ALLOWED_ORIGINS في Vercel برابط Vercel
+   - أضف NEXT_PUBLIC_APP_URL في Vercel برابط Vercel
+   - أضف رابط Vercel في ALLOWED_ORIGINS في Railway
+
+==========================================
+الروابط المهمة
+==========================================
+
+Railway Socket.io Server:
+https://royal-chat-production-19b3.up.railway.app
+
+WebSocket URL (للاستخدام في Vercel):
+wss://royal-chat-production-19b3.up.railway.app
+
+Vercel (سيتم إنشاؤه بعد النشر):
+https://royal-chat.vercel.app
+(استبدل برابطك الفعلي)
+
+==========================================
+ملاحظات مهمة
+==========================================
+
+1. ✅ NEXT_PUBLIC_WS_URL في Vercel يجب أن يبدأ بـ wss://
+2. ✅ NEXT_PUBLIC_VAPID_PUBLIC_KEY يجب أن يكون نفس VAPID_PUBLIC_KEY
+3. ✅ VAPID_SUBJECT يجب أن يبدأ بـ mailto:
+4. ✅ بعد النشر على Vercel، أضف رابط Vercel في ALLOWED_ORIGINS في Railway
+5. ✅ تأكد من أن Socket.io Server يعمل على Railway قبل إضافة NEXT_PUBLIC_WS_URL في Vercel
+
+==========================================
+تم! كل المتغيرات جاهزة للنسخ واللصق
+==========================================

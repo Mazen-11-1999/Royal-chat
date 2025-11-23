@@ -35,7 +35,7 @@ export function PremiumChatPage({ currentUser }: PremiumChatPageProps) {
         setIsLoading(false);
         return;
       }
-      
+
       // Check for free subscription from API
       try {
         const freeSubResponse = await fetch(`/api/subscription/free/${currentUser.id}`);
@@ -63,7 +63,7 @@ export function PremiumChatPage({ currentUser }: PremiumChatPageProps) {
       } catch (error) {
         console.error('Error checking free subscription:', error);
       }
-      
+
       // Check localStorage as fallback
       const savedSubscription = localStorage.getItem(`subscription_${currentUser.id}`);
       if (savedSubscription) {
@@ -145,7 +145,7 @@ export function PremiumChatPage({ currentUser }: PremiumChatPageProps) {
               {dir === 'rtl' ? 'في انتظار التأكيد' : 'Pending Confirmation'}
             </CardTitle>
             <CardDescription className="text-lg mt-2">
-              {dir === 'rtl' 
+              {dir === 'rtl'
                 ? 'سيتم تفعيل اشتراكك بعد تأكيد التحويل البنكي'
                 : 'Your subscription will be activated after bank transfer confirmation'}
             </CardDescription>
@@ -153,17 +153,17 @@ export function PremiumChatPage({ currentUser }: PremiumChatPageProps) {
           <CardContent className="space-y-4">
             <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
               <p className="text-sm text-yellow-800 dark:text-yellow-200">
-                {dir === 'rtl' 
+                {dir === 'rtl'
                   ? '✅ تم استلام طلب الاشتراك الخاص بك'
                   : '✅ Your subscription request has been received'}
               </p>
               <p className="text-sm text-yellow-800 dark:text-yellow-200 mt-2">
-                {dir === 'rtl' 
+                {dir === 'rtl'
                   ? '⏳ سيتم تفعيل اشتراكك خلال 24 ساعة بعد تأكيد التحويل البنكي'
                   : '⏳ Your subscription will be activated within 24 hours after bank transfer confirmation'}
               </p>
               <p className="text-sm text-yellow-800 dark:text-yellow-200 mt-2">
-                {dir === 'rtl' 
+                {dir === 'rtl'
                   ? '📧 ستصلك رسالة تأكيد على بريدك الإلكتروني عند التفعيل'
                   : '📧 You will receive a confirmation email when activated'}
               </p>
@@ -234,8 +234,8 @@ export function PremiumChatPage({ currentUser }: PremiumChatPageProps) {
             {dir === 'rtl' ? 'الدردشة الجماعية المميزة' : 'Premium Group Chat'}
           </CardTitle>
           <CardDescription className="text-base sm:text-lg mt-2 px-2">
-            {dir === 'rtl' 
-              ? 'انضم إلى مجتمع حصري من المحترفين والمبدعين' 
+            {dir === 'rtl'
+              ? 'انضم إلى مجتمع حصري من المحترفين والمبدعين'
               : 'Join an exclusive community of professionals and creatives'}
           </CardDescription>
         </CardHeader>
@@ -271,7 +271,7 @@ export function PremiumChatPage({ currentUser }: PremiumChatPageProps) {
                 </li>
               </ul>
             </div>
-            
+
             {/* Pricing Box - Show first on mobile */}
             <div className="space-y-4 order-1 md:order-2">
               <div className="border-2 border-primary rounded-xl p-6 sm:p-8 text-center bg-gradient-to-br from-primary/5 to-primary/10">
@@ -309,7 +309,7 @@ export function PremiumChatPage({ currentUser }: PremiumChatPageProps) {
           {/* Security Notice - Better spacing */}
           <div className="text-center text-xs sm:text-sm text-muted-foreground pt-4 sm:pt-6 border-t space-y-2">
             <p className="leading-relaxed px-2">
-              {dir === 'rtl' 
+              {dir === 'rtl'
                 ? '✅ دفعة آمنة ومشفرة | ✅ استرداد الأموال خلال 30 يوم | ✅ دعم على مدار الساعة'
                 : '✅ Secure encrypted payment | ✅ 30-day money-back guarantee | ✅ 24/7 support'}
             </p>
@@ -319,4 +319,3 @@ export function PremiumChatPage({ currentUser }: PremiumChatPageProps) {
     </div>
   );
 }
-

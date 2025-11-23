@@ -1,0 +1,90 @@
+==========================================
+متغيرات البيئة لـ Vercel - جاهزة للنسخ
+==========================================
+
+انسخ كل متغير على حدة وأضفه في Vercel:
+
+─────────────────────────────────────────
+1. MONGODB_URI
+─────────────────────────────────────────
+Name: MONGODB_URI
+Value: mongodb+srv://username:password@cluster0.xxxxx.mongodb.net/royal-chat?retryWrites=true&w=majority
+
+ملاحظة: استبدل username و password و xxxxx بقيمك من MongoDB Atlas
+
+─────────────────────────────────────────
+2. VAPID_PUBLIC_KEY
+─────────────────────────────────────────
+Name: VAPID_PUBLIC_KEY
+Value: (انسخ المفتاح العام من npx web-push generate-vapid-keys)
+
+─────────────────────────────────────────
+3. VAPID_PRIVATE_KEY
+─────────────────────────────────────────
+Name: VAPID_PRIVATE_KEY
+Value: (انسخ المفتاح الخاص من npx web-push generate-vapid-keys)
+
+─────────────────────────────────────────
+4. VAPID_SUBJECT
+─────────────────────────────────────────
+Name: VAPID_SUBJECT
+Value: mailto:mazenjamal19991@gmail.com
+
+ملاحظة: استبدل البريد الإلكتروني ببريدك
+
+─────────────────────────────────────────
+5. NEXT_PUBLIC_VAPID_PUBLIC_KEY
+─────────────────────────────────────────
+Name: NEXT_PUBLIC_VAPID_PUBLIC_KEY
+Value: (نفس قيمة VAPID_PUBLIC_KEY - انسخ نفس المفتاح)
+
+─────────────────────────────────────────
+6. NEXT_PUBLIC_WS_URL
+─────────────────────────────────────────
+Name: NEXT_PUBLIC_WS_URL
+Value: wss://your-socket-server-url
+
+ملاحظة:
+- استبدل your-socket-server-url برابط Socket.io Server الخاص بك
+- يجب أن يبدأ بـ wss:// (للاتصال الآمن)
+- مثال: wss://royal-chat-socket.railway.app
+
+─────────────────────────────────────────
+7. ALLOWED_ORIGINS (اختياري)
+─────────────────────────────────────────
+Name: ALLOWED_ORIGINS
+Value: https://royal-chat.vercel.app
+
+ملاحظة: استبدل برابط Vercel الخاص بك بعد النشر
+
+─────────────────────────────────────────
+8. NEXT_PUBLIC_APP_URL (اختياري)
+─────────────────────────────────────────
+Name: NEXT_PUBLIC_APP_URL
+Value: https://royal-chat.vercel.app
+
+ملاحظة: استبدل برابط Vercel الخاص بك بعد النشر
+
+==========================================
+كيفية توليد VAPID Keys:
+==========================================
+
+افتح Terminal وشغّل:
+npx web-push generate-vapid-keys
+
+ستحصل على:
+- Public Key → ضعه في VAPID_PUBLIC_KEY و NEXT_PUBLIC_VAPID_PUBLIC_KEY
+- Private Key → ضعه في VAPID_PRIVATE_KEY
+
+==========================================
+الترتيب الموصى به:
+==========================================
+
+1. أضف MONGODB_URI أولاً
+2. أضف VAPID_PUBLIC_KEY
+3. أضف VAPID_PRIVATE_KEY
+4. أضف VAPID_SUBJECT
+5. أضف NEXT_PUBLIC_VAPID_PUBLIC_KEY (نفس VAPID_PUBLIC_KEY)
+6. أضف NEXT_PUBLIC_WS_URL (بعد نشر Socket.io Server)
+
+==========================================
