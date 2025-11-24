@@ -29,12 +29,28 @@ export const WebSocketProvider = ({ children }: WebSocketProviderProps) => {
 
   useEffect(() => {
     // Get WebSocket URL from environment or use same host as app
-    // In Railway, WebSocket runs on the same port as Next.js
-    const wsUrl = process.env.NEXT_PUBLIC_WS_URL || 
-      (typeof window !== 'undefined' 
-        ? (window.location.protocol === 'https:' ? 'wss://' : 'ws://') + window.location.host
-        : 'ws://localhost:8080');
-    
+    let wsUrl = process.env.NEXT_PUBLIC_WS_URL;
+
+    // If NEXT_PUBLIC_WS_URL is not set, use same host as app (Vercel)
+    if (!wsUrl && typeof window !== 'undefined') {
+      wsUrl = (window.location.protocol === 'https:' ? 'wss://' : 'ws://') + window.location.host;
+    }
+
+    // Fallback to localhost for development
+    if (!wsUrl) {
+      wsUrl = 'ws://localhost:8080';
+    }
+
+    // Skip connection if URL points to Railway but doesn't use wss:// (likely not configured)
+    // This prevents connection errors when Railway server is not set up
+    if (wsUrl.includes('railway.app') && !wsUrl.startsWith('wss://')) {
+      console.warn('⚠️ WebSocket URL points to Railway but may not be configured correctly. Skipping WebSocket connection.');
+      console.info('💡 To enable WebSocket: Deploy Socket.io server on Railway and set NEXT_PUBLIC_WS_URL to wss://your-railway-url.up.railway.app');
+      return;
+    }
+
+    console.log('🔌 Connecting to WebSocket:', wsUrl);
+
     // Initialize socket connection with Android support
     const socketInstance = io(wsUrl, {
       transports: ['websocket', 'polling'], // Fallback to polling for Android
@@ -45,8 +61,8 @@ export const WebSocketProvider = ({ children }: WebSocketProviderProps) => {
       reconnection: true,
       reconnectionDelay: 1000,
       reconnectionDelayMax: 5000,
-      reconnectionAttempts: Infinity,
-      timeout: 20000,
+      reconnectionAttempts: 5, // Limit reconnection attempts to avoid spam
+      timeout: 10000, // Reduce timeout to fail faster
       forceNew: false,
       // Android WebView compatibility
       autoConnect: true,
@@ -55,21 +71,30 @@ export const WebSocketProvider = ({ children }: WebSocketProviderProps) => {
     });
 
     const onConnect = () => {
+      console.log('✅ WebSocket connected');
       setIsConnected(true);
     };
 
-    const onDisconnect = () => {
+    const onDisconnect = (reason: string) => {
+      console.log('❌ WebSocket disconnected:', reason);
+      setIsConnected(false);
+    };
+
+    const onError = (error: Error) => {
+      console.error('❌ WebSocket error:', error);
       setIsConnected(false);
     };
 
     socketInstance.on('connect', onConnect);
     socketInstance.on('disconnect', onDisconnect);
+    socketInstance.on('connect_error', onError);
 
     setSocket(socketInstance);
 
     return () => {
       socketInstance.off('connect', onConnect);
       socketInstance.off('disconnect', onDisconnect);
+      socketInstance.off('connect_error', onError);
       socketInstance.close();
     };
   }, []);
