@@ -35,10 +35,10 @@ export function SettingsPage({ currentUser, onUpdateUser }: SettingsPageProps) {
         </div>
       </div>
 
-      <ScrollArea className="h-[calc(100dvh-73px)]" style={{ WebkitOverflowScrolling: 'touch' }}>
+      <ScrollArea className="h-[calc(100dvh-73px)]" style={{ WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain' }}>
         <div className="p-3 sm:p-4 md:p-6">
           <Tabs defaultValue="profile" className="w-full">
-            <TabsList className="grid w-full grid-cols-4 sm:grid-cols-6 gap-1 sm:gap-2 overflow-x-auto scrollbar-hide" style={{ 
+            <TabsList className="grid w-full grid-cols-4 sm:grid-cols-6 gap-1 sm:gap-2 overflow-x-auto scrollbar-hide" style={{
               WebkitOverflowScrolling: 'touch',
               touchAction: 'pan-x pinch-zoom'
             }}>

@@ -501,6 +501,8 @@ export function ChatInterface({
         className="flex-1 p-2 sm:p-4 min-h-0 overflow-y-auto touch-manipulation"
         style={{
           maxHeight: 'calc(100dvh - 180px)',
+          WebkitOverflowScrolling: 'touch',
+          overscrollBehavior: 'contain',
           height: 'calc(100dvh - 180px)',
           WebkitOverflowScrolling: 'touch',
           touchAction: 'pan-y pinch-zoom'

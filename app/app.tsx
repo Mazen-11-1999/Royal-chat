@@ -11,11 +11,11 @@ const SettingsPage = dynamic(() => import('./settings/SettingsPage').then(mod =>
 const SelectConversationMessage = dynamic(() => import('./components/chat/SelectConversationMessage').then(mod => ({ default: mod.SelectConversationMessage })), { ssr: false });
 const ContactsPage = dynamic(() => import('./components/ContactsPage').then(mod => ({ default: mod.ContactsPage })), { ssr: false });
 const PremiumChatPage = dynamic(() => import('./components/premium/PremiumChatPage').then(mod => ({ default: mod.PremiumChatPage })), { ssr: false });
-import { 
-  Message, 
-  User, 
-  toMessage, 
-  toUser, 
+import {
+  Message,
+  User,
+  toMessage,
+  toUser,
   toOriginalMessage,
   Conversation,
   createMessage,
@@ -37,10 +37,10 @@ function App() {
   const [isMobile, setIsMobile] = useState(false);
   // Start with empty conversations - will be loaded from WebSocket/Database
   const [conversations, setConversations] = useState<Conversation[]>([]);
-  
+
   // Start with empty messages - will be loaded from WebSocket/Database
   const [messages, setMessages] = useState<Message[]>([]);
-  
+
   // Royal Crown Icon - Default avatar helper
   const getRoyalCrownIcon = (): string => {
     return `data:image/svg+xml;base64,${btoa(`
@@ -60,16 +60,16 @@ function App() {
           </filter>
         </defs>
         <rect width="200" height="200" fill="#1a1a1a" rx="100"/>
-        <path d="M50 140 L75 60 L100 80 L125 60 L150 140 Z" 
-              fill="url(#crownGradient)" 
-              stroke="#FFD700" 
+        <path d="M50 140 L75 60 L100 80 L125 60 L150 140 Z"
+              fill="url(#crownGradient)"
+              stroke="#FFD700"
               stroke-width="3"
               filter="url(#glow)"/>
         <circle cx="75" cy="60" r="10" fill="#FFD700" filter="url(#glow)"/>
         <circle cx="100" cy="50" r="12" fill="#FFD700" filter="url(#glow)"/>
         <circle cx="125" cy="60" r="10" fill="#FFD700" filter="url(#glow)"/>
         <path d="M45 140 L155 140 L160 150 L40 150 Z" fill="#FFD700" opacity="0.8" filter="url(#glow)"/>
-        <text x="100" y="175" font-family="serif" font-size="24" font-weight="bold" 
+        <text x="100" y="175" font-family="serif" font-size="24" font-weight="bold"
               fill="#FFD700" text-anchor="middle" filter="url(#glow)">R</text>
       </svg>
     `)}`;
@@ -80,13 +80,13 @@ function App() {
   const initialUser: User | null = loggedInUser ? {
     id: loggedInUser.id,
     name: loggedInUser.name,
-    avatar: loggedInUser.avatar && loggedInUser.avatar.includes('data:image/svg+xml') 
-      ? loggedInUser.avatar 
+    avatar: loggedInUser.avatar && loggedInUser.avatar.includes('data:image/svg+xml')
+      ? loggedInUser.avatar
       : getRoyalCrownIcon(), // Force Royal Crown if not already set
     status: 'online' as const,
     lastSeen: new Date()
   } : null;
-  
+
   const [currentUser, setCurrentUser] = useState<User | null>(initialUser);
 
   // Sync with logged in user when it changes
@@ -105,7 +105,7 @@ function App() {
     if (currentUser && currentUser.id) {
       // Set user ID for notifications
       NotificationService.setUserId(currentUser.id);
-      
+
       // Initialize Service Worker and subscribe to push notifications
       if (NotificationService.isPushSupported()) {
         NotificationService.initialize(currentUser.id)
@@ -160,16 +160,16 @@ function App() {
 
     // Handle conversation pin/archive updates
     const handleConversationPinned = (data: { conversationId: string; isPinned: boolean }) => {
-      setConversations(prev => prev.map(conv => 
-        conv.id === data.conversationId 
+      setConversations(prev => prev.map(conv =>
+        conv.id === data.conversationId
           ? { ...conv, isPinned: data.isPinned }
           : conv
       ));
     };
 
     const handleConversationArchived = (data: { conversationId: string; isArchived: boolean }) => {
-      setConversations(prev => prev.map(conv => 
-        conv.id === data.conversationId 
+      setConversations(prev => prev.map(conv =>
+        conv.id === data.conversationId
           ? { ...conv, isArchived: data.isArchived }
           : conv
       ));
@@ -194,7 +194,7 @@ function App() {
     }
 
     // Request messages for this conversation
-    socket.emit('get_messages', { 
+    socket.emit('get_messages', {
       conversationId: selectedConversationId,
       userId: currentUser.id,
       limit: 100
@@ -211,12 +211,12 @@ function App() {
           return null;
         }
       }).filter((msg): msg is Message => msg !== null);
-      
+
       // Filter messages for this conversation and sort by timestamp
       const conversationMessages = convertedMessages
         .filter(m => m.conversationId === selectedConversationId)
         .sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
-      
+
       // Replace all messages for this conversation (not merge)
       setMessages(prev => {
         const otherMessages = prev.filter(m => m.conversationId !== selectedConversationId);
@@ -267,7 +267,7 @@ function App() {
       if (message.senderId && message.senderId !== currentUser.id) {
         // Check if we're not currently viewing this conversation
         const isViewingConversation = selectedConversationId === message.conversationId;
-        
+
         // Find the conversation
         const conversation = conversations.find(c => c.id === message.conversationId);
         if (!conversation) return;
@@ -331,20 +331,20 @@ function App() {
         attachments: typeof message === 'string' ? undefined : message.attachments
       }
     );
-    
+
     // Convert to OriginalMessage for WebSocket (if needed)
     // const originalMessage = toOriginalMessage(newMessage);
 
     setMessages(prev => [...prev, newMessage]);
 
     setConversations(prev => {
-      const updated = prev.map(conv => 
-        conv.id === selectedConversationId 
-          ? { 
-              ...conv, 
+      const updated = prev.map(conv =>
+        conv.id === selectedConversationId
+          ? {
+              ...conv,
               lastMessage: newMessage,
               lastMessageTime: newMessage.timestamp
-            } 
+            }
           : conv
       );
       // Sort conversations by last message time (most recent first)
@@ -354,7 +354,7 @@ function App() {
         return timeB - timeA;
       });
     });
-    
+
     // Send the message via WebSocket
     if (socket) {
       const originalMessage = toOriginalMessage(newMessage);
@@ -367,9 +367,9 @@ function App() {
   };
 
   const handleEditMessage = (messageId: string, content: string) => {
-    setMessages((prevMessages: Message[]) => 
-      prevMessages.map((msg: Message) => 
-        msg.id === messageId 
+    setMessages((prevMessages: Message[]) =>
+      prevMessages.map((msg: Message) =>
+        msg.id === messageId
           ? { ...msg, content, edited: true }
           : msg
       )
@@ -378,16 +378,16 @@ function App() {
 
   const handleDeleteMessage = (messageId: string) => {
     setMessages((prevMessages: Message[]) => prevMessages.filter(msg => msg.id !== messageId));
-    
+
     // Update the last message in conversations if needed
-    setConversations((prevConversations: Conversation[]) => 
+    setConversations((prevConversations: Conversation[]) =>
       prevConversations.map((conv: Conversation) => {
         if (conv.lastMessage?.id === messageId) {
           // Find the most recent message that's not the one being deleted
           const lastMessage = [...messages]
             .filter((msg: Message) => msg.id !== messageId && msg.conversationId === conv.id)
             .sort((a: Message, b: Message) => b.timestamp.getTime() - a.timestamp.getTime())[0];
-            
+
           return {
             ...conv,
             lastMessage,
@@ -401,18 +401,18 @@ function App() {
 
   const handleReactToMessage = (messageId: string, emoji: string) => {
     if (!currentUser) return;
-    setMessages((prevMessages: Message[]) => 
+    setMessages((prevMessages: Message[]) =>
       prevMessages.map((msg: Message) => {
         if (msg.id !== messageId) return msg;
-        
+
         const reactions = [...(msg.reactions || [])];
         const existingReactionIndex = reactions.findIndex(r => r.emoji === emoji);
-        
+
         if (existingReactionIndex >= 0) {
           // Toggle user's reaction
           const reaction = reactions[existingReactionIndex];
           const userIndex = reaction.userIds.indexOf(currentUser.id);
-          
+
           if (userIndex >= 0) {
             // Remove user's reaction
             const newUserIds = [...reaction.userIds];
@@ -421,7 +421,7 @@ function App() {
             if (newUserNames.length > userIndex) {
               newUserNames.splice(userIndex, 1);
             }
-            
+
             if (newUserIds.length === 0) {
               // Remove the reaction if no users left
               reactions.splice(existingReactionIndex, 1);
@@ -449,7 +449,7 @@ function App() {
             userNames: [currentUser.name]
           });
         }
-        
+
         return {
           ...msg,
           reactions
@@ -461,7 +461,7 @@ function App() {
   const handleUpdateUser = (updates: Partial<import('./types/chat').User>) => {
     const updatedUser = { ...currentUser, ...updates } as User;
     setCurrentUser(updatedUser);
-    
+
     // Also update in UserContext if user is logged in
     if (loggedInUser) {
       updateLoggedInUser({
@@ -477,8 +477,8 @@ function App() {
     return {
       ...msg,
       // Ensure status is one of the allowed values
-      status: (['sending', 'sent', 'delivered', 'read'].includes(msg.status) 
-        ? msg.status 
+      status: (['sending', 'sent', 'delivered', 'read'].includes(msg.status)
+        ? msg.status
         : 'sent') as 'sending' | 'sent' | 'delivered' | 'read',
       // Convert reactions to the expected format
       reactions: (msg.reactions || []).map(r => ({
@@ -494,7 +494,7 @@ function App() {
   // Handle conversation selection - on mobile, this navigates to chat view
   const handleSelectConversation = (conversationId: string) => {
     setSelectedConversationId(conversationId);
-    
+
     // Join the conversation room via WebSocket
     if (socket && currentUser) {
       socket.emit('join_conversation', {
@@ -518,9 +518,9 @@ function App() {
   }
 
   return (
-    <div className="flex flex-col h-[100dvh] bg-background overflow-hidden w-full max-w-full touch-pan-y">
+    <div className="flex flex-col h-[100dvh] bg-background overflow-hidden w-full max-w-full touch-pan-y" style={{ WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain' }}>
       {/* Mobile-first: Always show chats, hide sidebar on mobile */}
-      <div className="flex-1 overflow-hidden pb-16 md:pb-0">
+      <div className="flex-1 overflow-hidden pb-16 md:pb-0" style={{ WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain' }}>
       {activeTab === 'chats' && (
         <>
           {/* Conversations List - Full width on mobile */}
@@ -554,7 +554,7 @@ function App() {
               <ChatInterface
                 conversation={{
                   ...selectedConversation,
-                  lastMessage: selectedConversation.lastMessage 
+                  lastMessage: selectedConversation.lastMessage
                     ? {
                         ...selectedConversation.lastMessage,
                         // Convert to the expected message format

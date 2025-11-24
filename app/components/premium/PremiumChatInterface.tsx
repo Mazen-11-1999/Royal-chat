@@ -1203,7 +1203,7 @@ export function PremiumChatInterface({ currentUser, subscription }: PremiumChatI
     <div className="flex-1 flex flex-col sm:flex-row h-full w-full min-w-0 relative overflow-hidden premium-chat-container animate-fade-in-scale" dir={dir}>
       {/* Members List Sidebar - Mobile responsive with animations */}
       {showMembersList && (
-        <div className="w-full sm:w-80 fixed sm:relative inset-0 sm:inset-auto z-40 sm:z-30 border-r bg-background/95 backdrop-blur-sm animate-slide-in-right animate-fade-in-scale touch-manipulation overflow-y-auto">
+        <div className="w-full sm:w-80 fixed sm:relative inset-0 sm:inset-auto z-40 sm:z-30 border-r bg-background/95 backdrop-blur-sm animate-slide-in-right animate-fade-in-scale touch-manipulation overflow-y-auto" style={{ WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain' }}>
           <PremiumMembersList
             members={members.map((m, index) => ({
               ...m,
@@ -1224,6 +1224,7 @@ export function PremiumChatInterface({ currentUser, subscription }: PremiumChatI
         className="flex-1 flex flex-col h-full w-full min-w-0 relative overflow-x-hidden overflow-y-auto touch-pan-y"
         style={{
           WebkitOverflowScrolling: 'touch',
+          overscrollBehavior: 'contain',
           touchAction: 'pan-y pinch-zoom'
         }}
       >
@@ -1735,6 +1736,8 @@ export function PremiumChatInterface({ currentUser, subscription }: PremiumChatI
       <ScrollArea
         className="flex-1 p-1.5 sm:p-2 md:p-3 relative z-10 w-full min-w-0 touch-pan-y"
         style={{
+          WebkitOverflowScrolling: 'touch',
+          overscrollBehavior: 'contain',
           maxHeight: 'calc(100dvh - 200px)',
           height: 'calc(100dvh - 200px)',
           WebkitOverflowScrolling: 'touch',
