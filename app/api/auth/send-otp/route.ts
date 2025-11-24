@@ -55,16 +55,23 @@ function formatPhoneNumber(phoneNumber: string): string {
   return `+${cleaned}`;
 }
 
-// Connect to MongoDB
+// Connect to MongoDB with better error handling
 async function connectDB() {
   if (mongoose.connections[0].readyState) {
     return;
   }
   try {
-    await mongoose.connect(MONGODB_URI);
+    await mongoose.connect(MONGODB_URI, {
+      serverSelectionTimeoutMS: 10000, // 10 seconds timeout
+      socketTimeoutMS: 45000, // 45 seconds socket timeout
+    });
     console.log('✅ Connected to MongoDB');
-  } catch (error) {
+  } catch (error: any) {
     console.error('❌ MongoDB connection error:', error);
+    // Provide more helpful error message
+    if (error.message?.includes('whitelist') || error.message?.includes('IP')) {
+      throw new Error('MongoDB Atlas IP Whitelist Error: يرجى إضافة Vercel IPs إلى MongoDB Atlas Network Access. راجع MONGODB_ATLAS_WHITELIST_FIX.md');
+    }
     throw error;
   }
 }
