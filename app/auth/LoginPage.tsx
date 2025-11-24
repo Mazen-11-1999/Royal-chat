@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/ui/
 import { Input } from '@/ui/input';
 import { Button } from '@/ui/button';
 import { Label } from '@/ui/label';
-import { Crown, Phone, Mail, Lock } from 'lucide-react';
+import { Crown, Phone, Lock } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@/contexts/UserContext';
@@ -16,14 +16,13 @@ export function LoginPage() {
   const { setUser } = useUser();
   const [step, setStep] = useState<'phone' | 'otp'>('phone');
   const [phoneNumber, setPhoneNumber] = useState('');
-  const [email, setEmail] = useState('');
   const [otp, setOtp] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   const handleSendOTP = async () => {
-    if (!phoneNumber || !email) {
-      setError(dir === 'rtl' ? 'يرجى إدخال رقم الهاتف والبريد الإلكتروني' : 'Please enter phone number and email');
+    if (!phoneNumber) {
+      setError(dir === 'rtl' ? 'يرجى إدخال رقم الهاتف' : 'Please enter phone number');
       return;
     }
 
@@ -34,7 +33,7 @@ export function LoginPage() {
       const response = await fetch('/api/auth/send-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phoneNumber, email })
+        body: JSON.stringify({ phoneNumber })
       });
 
       const data = await response.json();
@@ -102,9 +101,9 @@ export function LoginPage() {
             </CardTitle>
           </div>
           <CardDescription className="text-lg">
-            {step === 'phone' 
-              ? (dir === 'rtl' ? 'أدخل رقم هاتفك وبريدك الإلكتروني' : 'Enter your phone number and email')
-              : (dir === 'rtl' ? 'أدخل كود التحقق المرسل إلى بريدك' : 'Enter the verification code sent to your email')
+            {step === 'phone'
+              ? (dir === 'rtl' ? 'أدخل رقمك الخاص لتسجيل دخولك' : 'Enter your phone number to login')
+              : (dir === 'rtl' ? 'أدخل كود التحقق المرسل إلى رقم هاتفك' : 'Enter the verification code sent to your phone')
             }
           </CardDescription>
         </CardHeader>
@@ -124,20 +123,12 @@ export function LoginPage() {
                   onChange={(e) => setPhoneNumber(e.target.value)}
                   dir={dir}
                 />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="email" className="flex items-center gap-2">
-                  <Mail className="w-4 h-4" />
-                  {dir === 'rtl' ? 'البريد الإلكتروني' : 'Email'}
-                </Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder={dir === 'rtl' ? 'example@email.com' : 'example@email.com'}
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  dir={dir}
-                />
+                <p className="text-xs text-muted-foreground">
+                  {dir === 'rtl'
+                    ? 'سيتم إرسال كود التحقق إلى رقمك الخاص'
+                    : 'Verification code will be sent to your phone number'
+                  }
+                </p>
               </div>
               {error && (
                 <div className="text-sm text-red-500 text-center">{error}</div>
@@ -148,7 +139,7 @@ export function LoginPage() {
                 className="w-full"
                 style={{ backgroundColor: `hsl(var(--primary))` }}
               >
-                {loading 
+                {loading
                   ? (dir === 'rtl' ? 'جاري الإرسال...' : 'Sending...')
                   : (dir === 'rtl' ? 'إرسال كود التحقق' : 'Send Verification Code')
                 }
@@ -172,9 +163,9 @@ export function LoginPage() {
                   className="text-center text-2xl tracking-widest"
                 />
                 <p className="text-xs text-muted-foreground text-center">
-                  {dir === 'rtl' 
-                    ? 'تم إرسال كود التحقق إلى بريدك الإلكتروني'
-                    : 'Verification code sent to your email'
+                  {dir === 'rtl'
+                    ? 'تم إرسال كود التحقق إلى رقم هاتفك'
+                    : 'Verification code sent to your phone'
                   }
                 </p>
               </div>
@@ -199,7 +190,7 @@ export function LoginPage() {
                   className="flex-1"
                   style={{ backgroundColor: `hsl(var(--primary))` }}
                 >
-                  {loading 
+                  {loading
                     ? (dir === 'rtl' ? 'جاري التحقق...' : 'Verifying...')
                     : (dir === 'rtl' ? 'تحقق' : 'Verify')
                   }
@@ -212,4 +203,3 @@ export function LoginPage() {
     </div>
   );
 }
-

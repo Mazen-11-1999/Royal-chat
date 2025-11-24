@@ -1,0 +1,42 @@
+==========================================
+VAPID_PRIVATE_KEY - القيمة الصحيحة
+==========================================
+
+Name: VAPID_PRIVATE_KEY
+Value: lHG1ut_ieCXnNv-0QsHv8bm5Sw0PLAOtNEqai_wcBMU
+
+Environment: Production, Preview, Development
+
+==========================================
+ملاحظة مهمة:
+==========================================
+
+✅ هذا المفتاح الخاص (Private Key)
+✅ يجب أن يكون مختلف عن VAPID_PUBLIC_KEY
+✅ يجب أن يكون سري ومحمي
+✅ لا تشاركه مع أحد
+
+==========================================
+المفاتيح الكاملة:
+==========================================
+
+Public Key:
+BDADsOfdCaR0pMQpVfQFmKRE6ar24p5vw61Ah7cfXS-Xe1Oh3iUCEpfQUqjlQTH5t4HbJwDHYsPVZsewjddX8iI
+
+Private Key:
+lHG1ut_ieCXnNv-0QsHv8bm5Sw0PLAOtNEqai_wcBMU
+
+==========================================
+في Vercel:
+==========================================
+
+1. اذهب إلى: Project → Settings → Environment Variables
+2. اضغط "Add New"
+3. أضف:
+   Name: VAPID_PRIVATE_KEY
+   Value: lHG1ut_ieCXnNv-0QsHv8bm5Sw0PLAOtNEqai_wcBMU
+   Environment: Production, Preview, Development
+4. اضغط "Save"
+5. اضغط "Redeploy"
+
+==========================================

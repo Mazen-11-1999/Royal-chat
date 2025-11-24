@@ -57,8 +57,8 @@ app.post('/api/auth/send-otp', async (req, res) => {
   try {
     const { phoneNumber, email } = req.body;
 
-    if (!phoneNumber || !email) {
-      return res.status(400).json({ success: false, message: 'رقم الهاتف والبريد الإلكتروني مطلوبان' });
+    if (!phoneNumber) {
+      return res.status(400).json({ success: false, message: 'رقم الهاتف مطلوب' });
     }
 
     const result = await sendOTP(phoneNumber, email);

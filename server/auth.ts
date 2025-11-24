@@ -1,28 +1,38 @@
-import nodemailer from 'nodemailer';
+import twilio from 'twilio';
 import { OTP, User } from './database.js';
 
-// Email configuration
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST || 'smtp.gmail.com',
-  port: parseInt(process.env.SMTP_PORT || '587'),
-  secure: false, // true for 465, false for other ports
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
-  },
-});
+// Twilio configuration
+const accountSid = process.env.TWILIO_ACCOUNT_SID;
+const authToken = process.env.TWILIO_AUTH_TOKEN;
+const twilioPhoneNumber = process.env.TWILIO_PHONE_NUMBER;
+
+// Initialize Twilio client only if credentials are available
+const client = accountSid && authToken ? twilio(accountSid, authToken) : null;
 
 // Generate OTP code
 function generateOTP(): string {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
-// Send OTP via email
-export async function sendOTP(phoneNumber: string, email: string): Promise<{ success: boolean; message: string }> {
+// Format phone number (add country code if missing)
+function formatPhoneNumber(phoneNumber: string): string {
+  // Remove any non-digit characters
+  const cleaned = phoneNumber.replace(/\D/g, '');
+
+  // If it doesn't start with country code, assume it's Yemen (+967)
+  if (!cleaned.startsWith('967')) {
+    return `+967${cleaned}`;
+  }
+
+  return `+${cleaned}`;
+}
+
+// Send OTP via SMS
+export async function sendOTP(phoneNumber: string, email?: string): Promise<{ success: boolean; message: string }> {
   try {
     // Check if user exists
     const existingUser = await User.findOne({ phoneNumber });
-    
+
     // Generate OTP
     const code = generateOTP();
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
@@ -33,48 +43,57 @@ export async function sendOTP(phoneNumber: string, email: string): Promise<{ suc
     // Save new OTP
     await OTP.create({
       phoneNumber,
-      email,
+      email: email || '',
       code,
       expiresAt,
       verified: false
     });
 
-    // Send email
-    const mailOptions = {
-      from: process.env.SMTP_USER || 'noreply@royal-chat.com',
-      to: email,
-      subject: 'كود التحقق - Royal Chat',
-      html: `
-        <div dir="rtl" style="font-family: Arial, sans-serif; padding: 20px; background-color: #f5f5f5;">
-          <div style="max-width: 600px; margin: 0 auto; background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
-            <h1 style="color: #FFD700; text-align: center; margin-bottom: 30px;">👑 Royal Chat</h1>
-            <h2 style="color: #333; text-align: center; margin-bottom: 20px;">كود التحقق</h2>
-            <p style="color: #666; font-size: 16px; line-height: 1.6; text-align: center;">
-              مرحباً بك في Royal Chat!
-            </p>
-            <p style="color: #666; font-size: 16px; line-height: 1.6; text-align: center; margin-bottom: 30px;">
-              استخدم الكود التالي للتحقق من رقم هاتفك:
-            </p>
-            <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; text-align: center; margin: 30px 0;">
-              <h1 style="color: #FFD700; font-size: 48px; letter-spacing: 10px; margin: 0; font-weight: bold;">${code}</h1>
-            </div>
-            <p style="color: #999; font-size: 14px; text-align: center; margin-top: 30px;">
-              هذا الكود صالح لمدة 10 دقائق فقط
-            </p>
-            <p style="color: #999; font-size: 12px; text-align: center; margin-top: 20px;">
-              إذا لم تطلب هذا الكود، يرجى تجاهل هذه الرسالة
-            </p>
-          </div>
-        </div>
-      `
-    };
+    // Format phone number
+    const formattedPhone = formatPhoneNumber(phoneNumber);
 
-    await transporter.sendMail(mailOptions);
+    // Send SMS via Twilio
+    if (!client || !twilioPhoneNumber) {
+      console.error('Twilio credentials not configured');
+      // For development/testing: log the code instead
+      console.log(`[DEV MODE] OTP Code for ${phoneNumber}: ${code}`);
+      return {
+        success: true,
+        message: 'تم إرسال كود التحقق (وضع التطوير - تحقق من Console)'
+      };
+    }
 
-    return {
-      success: true,
-      message: 'تم إرسال كود التحقق إلى بريدك الإلكتروني'
-    };
+    try {
+      await client.messages.create({
+        body: `كود التحقق الخاص بك في Royal Chat هو: ${code}\n\nهذا الكود صالح لمدة 10 دقائق فقط.`,
+        from: twilioPhoneNumber,
+        to: formattedPhone
+      });
+
+      return {
+        success: true,
+        message: 'تم إرسال كود التحقق إلى رقم هاتفك'
+      };
+    } catch (twilioError: any) {
+      console.error('Twilio error:', twilioError);
+
+      // Handle Twilio specific errors
+      if (twilioError.code === 21211) {
+        return {
+          success: false,
+          message: 'رقم الهاتف غير صحيح'
+        };
+      }
+
+      if (twilioError.code === 21608) {
+        return {
+          success: false,
+          message: 'رقم الهاتف غير مدعوم في حساب Twilio التجريبي'
+        };
+      }
+
+      throw twilioError;
+    }
   } catch (error: any) {
     console.error('Error sending OTP:', error);
     return {
@@ -112,7 +131,7 @@ export async function verifyOTP(phoneNumber: string, code: string): Promise<{ su
       // Create new user
       user = await User.create({
         phoneNumber,
-        email: otp.email,
+        email: otp.email || '',
         name: `User ${phoneNumber}`,
         avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${phoneNumber}`,
         status: 'online',
@@ -169,4 +188,3 @@ export async function findUsersByPhoneNumbers(phoneNumbers: string[]): Promise<a
     return [];
   }
 }
-

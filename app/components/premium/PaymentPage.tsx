@@ -29,7 +29,7 @@ export function PaymentPage({ currentUser, onSuccess, onCancel }: PaymentPagePro
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
-    
+
     if (paymentMethod === 'card') {
       if (!cardNumber || cardNumber.replace(/\s/g, '').length !== 16) {
         newErrors.cardNumber = dir === 'rtl' ? 'رقم البطاقة غير صحيح' : 'Invalid card number';
@@ -107,8 +107,10 @@ export function PaymentPage({ currentUser, onSuccess, onCancel }: PaymentPagePro
   };
 
   return (
-    <div className="flex-1 flex items-start justify-center p-3 sm:p-4 md:p-6 overflow-y-auto overflow-x-hidden min-h-0" dir={dir}>
-      <Card className="w-full max-w-3xl my-2 sm:my-4 md:my-6">
+    <div className="flex-1 flex flex-col min-h-0 overflow-hidden" dir={dir}>
+      <div className="flex-1 overflow-y-auto overflow-x-hidden p-3 sm:p-4 md:p-6">
+        <div className="flex items-start justify-center min-h-full py-2 sm:py-4 md:py-6">
+          <Card className="w-full max-w-3xl my-auto">
         <CardHeader className="p-4 sm:p-6">
           <div className="flex items-center gap-3 sm:gap-4 mb-3 sm:mb-4">
             <Button
@@ -124,7 +126,7 @@ export function PaymentPage({ currentUser, onSuccess, onCancel }: PaymentPagePro
                 {dir === 'rtl' ? 'إتمام الدفع' : 'Complete Payment'}
               </CardTitle>
               <CardDescription className="text-sm sm:text-base mt-1">
-                {dir === 'rtl' 
+                {dir === 'rtl'
                   ? 'اشترك في الدردشة الجماعية المميزة - $30 مدى الحياة'
                   : 'Subscribe to Premium Group Chat - $30 Lifetime'}
               </CardDescription>
@@ -277,7 +279,7 @@ export function PaymentPage({ currentUser, onSuccess, onCancel }: PaymentPagePro
             <div className="border-2 border-dashed border-muted rounded-lg p-8 text-center">
               <Lock className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
               <p className="text-muted-foreground mb-4">
-                {dir === 'rtl' 
+                {dir === 'rtl'
                   ? 'سيتم توجيهك إلى PayPal لإتمام الدفع بشكل آمن'
                   : 'You will be redirected to PayPal to complete the payment securely'}
               </p>
@@ -304,13 +306,13 @@ export function PaymentPage({ currentUser, onSuccess, onCancel }: PaymentPagePro
                   <div>
                     <h3 className="font-bold text-lg">{dir === 'rtl' ? 'التحويل البنكي' : 'Bank Transfer'}</h3>
                     <p className="text-sm text-muted-foreground">
-                      {dir === 'rtl' 
+                      {dir === 'rtl'
                         ? 'قم بتحويل المبلغ إلى الحساب البنكي التالي'
                         : 'Transfer the amount to the following bank account'}
                     </p>
                   </div>
                 </div>
-                
+
                 <div className="space-y-3 bg-background p-4 rounded-lg border">
                   <div className="flex justify-between items-center">
                     <span className="font-semibold text-sm">{dir === 'rtl' ? 'اسم البنك' : 'Bank Name'}:</span>
@@ -368,7 +370,7 @@ export function PaymentPage({ currentUser, onSuccess, onCancel }: PaymentPagePro
 
                 <div className="mt-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
                   <p className="text-sm text-yellow-800 dark:text-yellow-200">
-                    <strong>{dir === 'rtl' ? 'ملاحظة مهمة:' : 'Important Note:'}</strong> {dir === 'rtl' 
+                    <strong>{dir === 'rtl' ? 'ملاحظة مهمة:' : 'Important Note:'}</strong> {dir === 'rtl'
                       ? 'بعد إتمام التحويل، سيتم تفعيل اشتراكك خلال 24 ساعة. يرجى إرفاق إيصال التحويل عند التواصل معنا.'
                       : 'After completing the transfer, your subscription will be activated within 24 hours. Please attach the transfer receipt when contacting us.'}
                   </p>
@@ -402,7 +404,7 @@ export function PaymentPage({ currentUser, onSuccess, onCancel }: PaymentPagePro
           <div className="flex items-start gap-2 text-sm text-muted-foreground">
             <Lock className="w-4 h-4 mt-0.5 flex-shrink-0" />
             <p>
-              {dir === 'rtl' 
+              {dir === 'rtl'
                 ? 'جميع المدفوعات مشفرة وآمنة. لن نخزن معلومات بطاقتك الائتمانية.'
                 : 'All payments are encrypted and secure. We do not store your credit card information.'}
             </p>
@@ -423,7 +425,7 @@ export function PaymentPage({ currentUser, onSuccess, onCancel }: PaymentPagePro
               disabled={isProcessing}
               className="flex-1 h-12 sm:h-14 text-base sm:text-lg min-h-[48px] touch-manipulation"
               style={{
-                background: paymentMethod === 'card' 
+                background: paymentMethod === 'card'
                   ? `linear-gradient(135deg, hsl(var(--chat-from)), hsl(var(--chat-to)))`
                   : paymentMethod === 'paypal'
                   ? '#0070ba'
@@ -459,7 +461,8 @@ export function PaymentPage({ currentUser, onSuccess, onCancel }: PaymentPagePro
           </div>
         </CardContent>
       </Card>
+        </div>
+      </div>
     </div>
   );
 }
-
