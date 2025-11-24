@@ -33,6 +33,20 @@ async function connectDB() {
   if (mongoose.connections[0].readyState) {
     return;
   }
+
+  // Check if MONGODB_URI is set
+  if (!process.env.MONGODB_URI || MONGODB_URI.includes('localhost')) {
+    console.error('❌ MONGODB_URI not set or using localhost');
+    throw new Error('MONGODB_URI not configured in Vercel Environment Variables');
+  }
+
+  // Log connection attempt (without password)
+  const uriParts = MONGODB_URI.split('@');
+  if (uriParts.length > 1) {
+    const userPart = uriParts[0].split('//')[1]?.split(':')[0] || 'unknown';
+    console.log(`🔌 Attempting to connect to MongoDB as user: ${userPart}`);
+  }
+
   try {
     await mongoose.connect(MONGODB_URI, {
       serverSelectionTimeoutMS: 10000, // 10 seconds timeout
@@ -40,13 +54,16 @@ async function connectDB() {
     });
     console.log('✅ Connected to MongoDB');
   } catch (error: any) {
-    console.error('❌ MongoDB connection error:', error);
+    console.error('❌ MongoDB connection error:', error.message);
+    console.error('❌ Error code:', error.code);
+    console.error('❌ Error name:', error.name);
+
     // Provide more helpful error message
-    if (error.message?.includes('whitelist') || error.message?.includes('IP')) {
-      throw new Error('MongoDB Atlas IP Whitelist Error: يرجى إضافة Vercel IPs إلى MongoDB Atlas Network Access. راجع MONGODB_ATLAS_WHITELIST_FIX.md');
+    if (error.message?.includes('whitelist') || error.message?.includes('IP') || error.code === 'ENOTFOUND') {
+      throw new Error('MongoDB Atlas IP Whitelist Error: يرجى إضافة 0.0.0.0/0 إلى MongoDB Atlas Network Access. راجع MONGODB_ATLAS_WHITELIST_FIX.md');
     }
-    if (error.message?.includes('authentication') || error.message?.includes('Authenticate')) {
-      throw new Error('MongoDB Authentication Error: يرجى التحقق من MONGODB_URI في Vercel Environment Variables. تأكد من أن username و password صحيحين.');
+    if (error.message?.includes('authentication') || error.message?.includes('Authenticate') || error.code === 18 || error.code === 8000) {
+      throw new Error('MongoDB Authentication Error: يرجى التحقق من MONGODB_URI في Vercel Environment Variables. تأكد من أن username و password صحيحين. القيمة الصحيحة: mongodb+srv://mazenjamal19991_db_user:4m49vnFecshgUVCz@royal-chat-cluster.jz1fkos.mongodb.net/royal-chat?retryWrites=true&w=majority');
     }
     if (error.message?.includes('bad auth') || error.message?.includes('Authentication failed')) {
       throw new Error('MongoDB Authentication Failed: يرجى التحقق من Database User في MongoDB Atlas. تأكد من أن username و password صحيحين في MONGODB_URI.');

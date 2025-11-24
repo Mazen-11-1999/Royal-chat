@@ -1,6 +1,7 @@
 # 🔧 دليل كامل: إصلاح مشكلة MongoDB Atlas IP Whitelist
 
 ## ⚠️ المشكلة:
+
 ```
 Could not connect to any servers in your MongoDB Atlas cluster.
 One common reason is that you're trying to access the database from an IP that isn't whitelisted.
@@ -21,6 +22,7 @@ One common reason is that you're trying to access the database from an IP that i
 ### 📸 الخطوة 2: الذهاب إلى Network Access
 
 1. في **القائمة الجانبية اليسرى**:
+
    - ابحث عن **"Security"** أو **"الأمان"**
    - اضغط **"Network Access"** أو **"الوصول إلى الشبكة"**
 
@@ -36,9 +38,11 @@ One common reason is that you're trying to access the database from an IP that i
 #### الطريقة الأسهل (للتطوير):
 
 1. في صفحة **"Network Access"**:
+
    - اضغط **"Add IP Address"** (أو **"إضافة عنوان IP"**)
 
 2. في النافذة المنبثقة:
+
    - **اختر**: **"Allow Access from Anywhere"** (أو **"السماح بالوصول من أي مكان"**)
    - **أو** أدخل يدوياً: `0.0.0.0/0`
    - في حقل **"Comment"**: أدخل `Vercel - All IPs`
@@ -51,9 +55,11 @@ One common reason is that you're trying to access the database from an IP that i
 #### الطريقة الأكثر أماناً (للإنتاج):
 
 1. في صفحة **"Network Access"**:
+
    - اضغط **"Add IP Address"**
 
 2. أضف IPs التالية (Vercel IP ranges):
+
    ```
    76.76.21.0/24
    76.223.126.0/24
@@ -68,6 +74,7 @@ One common reason is that you're trying to access the database from an IP that i
 ### 📸 الخطوة 4: التحقق من الإضافة
 
 1. بعد إضافة IP:
+
    - ستظهر في قائمة **"IP Access List"**
    - يجب أن ترى `0.0.0.0/0` أو IPs التي أضفتها
 
@@ -92,10 +99,12 @@ One common reason is that you're trying to access the database from an IP that i
 ### 📸 الخطوة 6: التحقق من Database User
 
 1. في **MongoDB Atlas Dashboard**:
+
    - اضغط **"Database Access"** من القائمة الجانبية
    - أو اذهب إلى: https://cloud.mongodb.com/v2#/security/database/users
 
 2. تحقق من وجود **Database User**:
+
    - يجب أن يكون لديك user مع password
    - إذا لم يكن موجوداً:
      - اضغط **"Add New Database User"**
@@ -135,20 +144,24 @@ One common reason is that you're trying to access the database from an IP that i
 ## 🆘 إذا استمرت المشكلة:
 
 ### 1. تحقق من MONGODB_URI:
+
 - يجب أن يبدأ بـ `mongodb+srv://`
 - يجب أن يحتوي على `username:password`
 - يجب أن ينتهي بـ `?retryWrites=true&w=majority`
 
 ### 2. تحقق من Database User:
+
 - تأكد من أن User موجود
 - تأكد من أن Password صحيح
 - تأكد من أن User لديه صلاحيات (Atlas Admin)
 
 ### 3. تحقق من Cluster Status:
+
 - تأكد أن Cluster يعمل (ليس paused)
 - اذهب إلى **"Clusters"** → تحقق من حالة Cluster
 
 ### 4. تحقق من Vercel Logs:
+
 - اذهب إلى **Vercel Dashboard** → **Deployments**
 - اضغط على آخر deployment
 - اضغط **"Functions"** → اختر `/api/auth/send-otp`
@@ -159,6 +172,7 @@ One common reason is that you're trying to access the database from an IP that i
 ## ✅ بعد الإصلاح:
 
 بعد إضافة IP إلى whitelist:
+
 1. ✅ انتظر 1-2 دقيقة
 2. ✅ Redeploy في Vercel
 3. ✅ جرب إرسال OTP مرة أخرى
@@ -171,9 +185,11 @@ One common reason is that you're trying to access the database from an IP that i
 إذا أردت التأكد من أن كل شيء صحيح، التقط صور:
 
 1. **صورة من MongoDB Atlas Network Access**:
+
    - يجب أن ترى `0.0.0.0/0` في القائمة
 
 2. **صورة من MongoDB Atlas Database Access**:
+
    - يجب أن ترى Database User
 
 3. **صورة من Vercel Environment Variables**:
@@ -184,6 +200,7 @@ One common reason is that you're trying to access the database from an IP that i
 ## 🎯 الخلاصة:
 
 **الخطوات الأساسية:**
+
 1. MongoDB Atlas → Network Access → Add IP → `0.0.0.0/0`
 2. انتظر 1-2 دقيقة
 3. Redeploy في Vercel
