@@ -41,11 +41,11 @@ export const WebSocketProvider = ({ children }: WebSocketProviderProps) => {
       wsUrl = 'ws://localhost:8080';
     }
 
-    // Skip connection if URL points to Railway but doesn't use wss:// (likely not configured)
-    // This prevents connection errors when Railway server is not set up
-    if (wsUrl.includes('railway.app') && !wsUrl.startsWith('wss://')) {
-      console.warn('⚠️ WebSocket URL points to Railway but may not be configured correctly. Skipping WebSocket connection.');
-      console.info('💡 To enable WebSocket: Deploy Socket.io server on Railway and set NEXT_PUBLIC_WS_URL to wss://your-railway-url.up.railway.app');
+    // Skip connection if URL points to Railway (Railway free plan doesn't support app deployments)
+    // This prevents connection errors when Railway server is not available
+    if (wsUrl.includes('railway.app')) {
+      console.warn('⚠️ WebSocket URL points to Railway, but Railway free plan only supports databases, not applications.');
+      console.info('💡 To enable WebSocket: Remove NEXT_PUBLIC_WS_URL from Vercel, or deploy Socket.io server on a different platform (Render, Fly.io, etc.)');
       return;
     }
 
