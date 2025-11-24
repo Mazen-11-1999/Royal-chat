@@ -72,6 +72,12 @@ async function connectDB() {
     if (error.message?.includes('whitelist') || error.message?.includes('IP')) {
       throw new Error('MongoDB Atlas IP Whitelist Error: يرجى إضافة Vercel IPs إلى MongoDB Atlas Network Access. راجع MONGODB_ATLAS_WHITELIST_FIX.md');
     }
+    if (error.message?.includes('authentication') || error.message?.includes('Authenticate')) {
+      throw new Error('MongoDB Authentication Error: يرجى التحقق من MONGODB_URI في Vercel Environment Variables. تأكد من أن username و password صحيحين.');
+    }
+    if (error.message?.includes('bad auth') || error.message?.includes('Authentication failed')) {
+      throw new Error('MongoDB Authentication Failed: يرجى التحقق من Database User في MongoDB Atlas. تأكد من أن username و password صحيحين في MONGODB_URI.');
+    }
     throw error;
   }
 }
@@ -161,8 +167,20 @@ export async function POST(request: NextRequest) {
     }
   } catch (error: any) {
     console.error('Error in send-otp API route:', error);
+
+    // Provide more specific error messages
+    let errorMessage = error.message || 'حدث خطأ في إرسال كود التحقق';
+
+    if (error.message?.includes('authentication') || error.message?.includes('Authenticate')) {
+      errorMessage = 'خطأ في المصادقة مع قاعدة البيانات. يرجى التحقق من MONGODB_URI في Vercel Environment Variables.';
+    } else if (error.message?.includes('whitelist') || error.message?.includes('IP')) {
+      errorMessage = 'خطأ في IP Whitelist. يرجى إضافة Vercel IPs إلى MongoDB Atlas Network Access.';
+    } else if (error.message?.includes('connection')) {
+      errorMessage = 'خطأ في الاتصال بقاعدة البيانات. يرجى التحقق من MONGODB_URI.';
+    }
+
     return NextResponse.json(
-      { success: false, message: error.message || 'حدث خطأ في إرسال كود التحقق' },
+      { success: false, message: errorMessage },
       { status: 500 }
     );
   }
