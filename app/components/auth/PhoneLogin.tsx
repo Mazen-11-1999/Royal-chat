@@ -176,7 +176,7 @@ export function PhoneLogin({ onLoginSuccess }: PhoneLoginProps) {
 
     // Clean phone number (remove spaces, but keep any characters)
     const cleanedPhone = phoneNumber.trim();
-    
+
     // Minimal validation - just check if something was entered
     if (!cleanedPhone || cleanedPhone.length === 0) {
       setError(dir === 'rtl' ? 'يرجى إدخال رقم هاتف' : 'Please enter a phone number');
@@ -192,7 +192,7 @@ export function PhoneLogin({ onLoginSuccess }: PhoneLoginProps) {
           setTimeout(() => {
             setIsLoading(false);
             setIsSuccess(true);
-            
+
             // After success animation, proceed to login with full phone number
             setTimeout(() => {
               onLoginSuccess(fullPhoneNumber);
@@ -218,7 +218,7 @@ export function PhoneLogin({ onLoginSuccess }: PhoneLoginProps) {
           {/* Elegant Crown Header - More spacing */}
           <div className="flex flex-col items-center mb-8 sm:mb-10 md:mb-12">
             <div className="relative mb-4 sm:mb-5 md:mb-6">
-              <Crown 
+              <Crown
                 className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 text-yellow-500"
                 style={{
                   filter: 'drop-shadow(0 4px 12px rgba(255, 215, 0, 0.4))',
@@ -236,8 +236,8 @@ export function PhoneLogin({ onLoginSuccess }: PhoneLoginProps) {
             </h1>
             <div className="h-1 w-24 sm:w-28 bg-gradient-to-r from-transparent via-yellow-500 to-transparent mb-4 sm:mb-5" />
             <p className="text-base sm:text-lg font-medium text-gray-600">
-              {dir === 'rtl' 
-                ? 'تطبيق الدردشة المميز' 
+              {dir === 'rtl'
+                ? 'تطبيق الدردشة المميز'
                 : 'Premium Chat Application'}
             </p>
           </div>
@@ -248,9 +248,9 @@ export function PhoneLogin({ onLoginSuccess }: PhoneLoginProps) {
               <div className="space-y-4 sm:space-y-5">
                 <label htmlFor="phone" className="text-sm sm:text-base font-semibold text-gray-700 flex items-center gap-2 mb-3">
                   <Phone className="w-5 h-5 sm:w-6 sm:h-6 text-yellow-600" />
-                  {dir === 'rtl' ? 'رقم الهاتف' : 'Phone Number'}
+                  {dir === 'rtl' ? 'أدخل رقمك الخاص لتسجيل دخولك' : 'Enter your private number to login'}
                 </label>
-                
+
                 {/* Country Code and Phone Input - Stacked on mobile for better UX */}
                 <div className="flex flex-col sm:flex-row gap-3 sm:gap-3">
                   {/* Country Code Selector */}
@@ -263,7 +263,7 @@ export function PhoneLogin({ onLoginSuccess }: PhoneLoginProps) {
                       }
                     }}
                   >
-                    <SelectTrigger 
+                    <SelectTrigger
                       className={cn(
                         "w-full sm:w-[150px] h-14 sm:h-16 border-2 transition-all duration-200",
                         "focus:border-yellow-500 focus:ring-2 focus:ring-yellow-500/20",
@@ -319,18 +319,18 @@ export function PhoneLogin({ onLoginSuccess }: PhoneLoginProps) {
                     />
                   </div>
                 </div>
-                
+
                 {error && (
                   <div className="flex items-center gap-2 p-3 sm:p-4 bg-red-50 border border-red-200 rounded-lg mt-3">
                     <span className="text-red-500 text-base">⚠</span>
                     <p className="text-sm sm:text-base font-medium text-red-600">{error}</p>
                   </div>
                 )}
-                
+
                 <p className="text-xs sm:text-sm text-gray-500 text-center px-2 mt-2">
-                  {dir === 'rtl' 
-                    ? 'أدخل أي رقم للدخول (حالياً بدون قيود)' 
-                    : 'Enter any number to login (currently no restrictions)'}
+                  {dir === 'rtl'
+                    ? 'سيتم إرسال كود التحقق إلى رقمك الخاص'
+                    : 'Verification code will be sent to your private number'}
                 </p>
               </div>
 
@@ -405,4 +405,3 @@ export function PhoneLogin({ onLoginSuccess }: PhoneLoginProps) {
     </div>
   );
 }
-
