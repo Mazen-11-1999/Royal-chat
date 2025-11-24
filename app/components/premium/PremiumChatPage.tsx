@@ -221,9 +221,9 @@ export function PremiumChatPage({ currentUser }: PremiumChatPageProps) {
 
   // Show subscription page if not subscribed
   return (
-    <div className="flex-1 flex flex-col min-h-0 overflow-hidden" dir={dir}>
-      <div className="flex-1 overflow-y-auto overflow-x-hidden p-3 sm:p-4 md:p-6 animate-fade-in-scale">
-        <div className="flex items-start sm:items-center justify-center min-h-full py-4 sm:py-6">
+    <div className="flex-1 flex flex-col min-h-0" dir={dir} style={{ height: '100%', overflow: 'hidden' }}>
+      <div className="flex-1 overflow-y-auto overflow-x-hidden p-3 sm:p-4 md:p-6 animate-fade-in-scale" style={{ WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain' }}>
+        <div className="flex items-start sm:items-center justify-center py-4 sm:py-6">
           <Card className="w-full max-w-2xl my-auto animate-slide-in-up">
             <CardHeader className="text-center p-4 sm:p-6">
               <div className="flex justify-center mb-4 sm:mb-6">

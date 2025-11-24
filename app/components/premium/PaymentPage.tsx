@@ -107,9 +107,9 @@ export function PaymentPage({ currentUser, onSuccess, onCancel }: PaymentPagePro
   };
 
   return (
-    <div className="flex-1 flex flex-col min-h-0 overflow-hidden" dir={dir}>
-      <div className="flex-1 overflow-y-auto overflow-x-hidden p-3 sm:p-4 md:p-6">
-        <div className="flex items-start justify-center min-h-full py-2 sm:py-4 md:py-6">
+    <div className="flex-1 flex flex-col min-h-0" dir={dir} style={{ height: '100%', overflow: 'hidden' }}>
+      <div className="flex-1 overflow-y-auto overflow-x-hidden p-3 sm:p-4 md:p-6" style={{ WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain' }}>
+        <div className="flex items-start justify-center py-2 sm:py-4 md:py-6">
           <Card className="w-full max-w-3xl my-auto">
         <CardHeader className="p-4 sm:p-6">
           <div className="flex items-center gap-3 sm:gap-4 mb-3 sm:mb-4">
@@ -133,7 +133,7 @@ export function PaymentPage({ currentUser, onSuccess, onCancel }: PaymentPagePro
             </div>
           </div>
         </CardHeader>
-        <CardContent className="space-y-5 sm:space-y-6 overflow-visible p-4 sm:p-6">
+        <CardContent className="space-y-5 sm:space-y-6 p-4 sm:p-6" style={{ overflow: 'visible' }}>
           {/* Payment Summary */}
           <div className="border-2 border-primary/20 rounded-lg p-4 sm:p-5 bg-muted/50">
             <div className="flex justify-between items-center mb-2">
