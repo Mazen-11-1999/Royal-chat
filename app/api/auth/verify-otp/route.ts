@@ -7,7 +7,7 @@ const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/royal-
 // OTP Schema
 const OTPSchema = new mongoose.Schema({
   phoneNumber: { type: String, required: true, index: true },
-  email: { type: String, required: true },
+  email: { type: String, required: false, default: '' },
   code: { type: String, required: true },
   expiresAt: { type: Date, required: true },
   verified: { type: Boolean, default: false },

@@ -16,7 +16,7 @@ const client = accountSid && authToken ? twilio(accountSid, authToken) : null;
 // OTP Schema
 const OTPSchema = new mongoose.Schema({
   phoneNumber: { type: String, required: true, index: true },
-  email: { type: String, required: true },
+  email: { type: String, required: false, default: '' },
   code: { type: String, required: true },
   expiresAt: { type: Date, required: true },
   verified: { type: Boolean, default: false },
