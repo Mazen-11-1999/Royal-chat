@@ -4,18 +4,21 @@
 
 ### 1. ✅ Account SID:
 ```
-ACd9460d5b78c701ada82ebce57c8680d5
+ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 ```
+(احصل عليه من Twilio Dashboard)
 
 ### 2. ✅ Auth Token:
 ```
-bae7e3c46ab3b07d6c2e9761595661b5
+your_auth_token_here
 ```
+(احصل عليه من Twilio Dashboard)
 
 ### 3. ✅ Phone Number:
 ```
-+12317743353
++1234567890
 ```
+(احصل عليه من Twilio Dashboard - Phone Numbers)
 
 ---
 

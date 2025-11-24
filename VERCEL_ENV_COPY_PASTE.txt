@@ -71,25 +71,25 @@ Value: https://royal-chat.vercel.app
 9. TWILIO_ACCOUNT_SID (لإرسال SMS)
 ─────────────────────────────────────────
 Name: TWILIO_ACCOUNT_SID
-Value: ACd9460d5b78c701ada82ebce57c8680d5
+Value: ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 
-✅ تم الحصول عليه من Twilio Dashboard
+ملاحظة: احصل عليه من Twilio Dashboard
 
 ─────────────────────────────────────────
 10. TWILIO_AUTH_TOKEN (لإرسال SMS)
 ─────────────────────────────────────────
 Name: TWILIO_AUTH_TOKEN
-Value: bae7e3c46ab3b07d6c2e9761595661b5
+Value: your_auth_token_here
 
-✅ تم الحصول عليه من Twilio Dashboard
+ملاحظة: احصل عليه من Twilio Dashboard
 
 ─────────────────────────────────────────
 11. TWILIO_PHONE_NUMBER (لإرسال SMS)
 ─────────────────────────────────────────
 Name: TWILIO_PHONE_NUMBER
-Value: +12317743353
+Value: +1234567890
 
-✅ تم الحصول عليه من Twilio Dashboard
+ملاحظة: احصل عليه من Twilio Dashboard - Phone Numbers
 
 ==========================================
 كيفية توليد VAPID Keys:

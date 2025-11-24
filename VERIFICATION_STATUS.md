@@ -20,9 +20,9 @@
 - ✅ يعمل مع جميع تنسيقات الأرقام اليمنية
 
 ### 3. ✅ **إعداد Twilio**
-- ✅ Account SID: `ACd9460d5b78c701ada82ebce57c8680d5`
-- ✅ Auth Token: `bae7e3c46ab3b07d6c2e9761595661b5`
-- ✅ Phone Number: `+12317743353`
+- ✅ Account SID: (احصل عليه من Twilio Dashboard)
+- ✅ Auth Token: (احصل عليه من Twilio Dashboard)
+- ✅ Phone Number: (احصل عليه من Twilio Dashboard)
 - ⏳ **يحتاج إضافة في Vercel Environment Variables**
 
 ### 4. ✅ **واجهة المستخدم**
@@ -71,7 +71,7 @@
 - الرقم النهائي: `+9670501234567` أو `+967712345678`
 
 #### 2. **إرسال SMS:**
-- Twilio يرسل SMS من: `+12317743353` (الرقم الأمريكي)
+- Twilio يرسل SMS من: (رقم Twilio الخاص بك)
 - SMS يصل إلى: `+9670501234567` (الرقم اليمني)
 - ✅ **الرسالة ستصل بشكل طبيعي!**
 
@@ -104,9 +104,9 @@
 
 ### 1. ✅ **أضف متغيرات Twilio في Vercel:**
 ```
-TWILIO_ACCOUNT_SID=ACd9460d5b78c701ada82ebce57c8680d5
-TWILIO_AUTH_TOKEN=bae7e3c46ab3b07d6c2e9761595661b5
-TWILIO_PHONE_NUMBER=+12317743353
+TWILIO_ACCOUNT_SID=ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+TWILIO_AUTH_TOKEN=your_auth_token_here
+TWILIO_PHONE_NUMBER=+1234567890
 ```
 
 ### 2. ✅ **Redeploy في Vercel**

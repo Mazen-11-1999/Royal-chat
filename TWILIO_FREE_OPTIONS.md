@@ -117,8 +117,8 @@ if (!client || !twilioPhoneNumber) {
 
 ### إذا اخترت Twilio Trial:
 
-1. ✅ لديك Account SID: `ACd9460d5b78c701ada82ebce57c8680d5`
-2. ✅ لديك Auth Token: `bae7e3c46ab3b07d6c2e9761595661b5`
+1. ✅ لديك Account SID: (احصل عليه من Twilio Dashboard)
+2. ✅ لديك Auth Token: (احصل عليه من Twilio Dashboard)
 3. ⏳ **اشترِ رقم هاتف** ($1.15 من الرصيد المجاني)
 4. ⏳ **تحقق من رقم هاتفك** (للاختبار)
 5. ✅ أضف Phone Number في Vercel
