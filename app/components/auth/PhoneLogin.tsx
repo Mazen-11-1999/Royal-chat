@@ -77,9 +77,12 @@ export function PhoneLogin({ onLoginSuccess }: PhoneLoginProps) {
   // Default to Yemen (+967)
   const [selectedCountry, setSelectedCountry] = useState<CountryCode>(COUNTRY_CODES[0]);
   const [phoneNumber, setPhoneNumber] = useState('');
+  const [otp, setOtp] = useState('');
+  const [step, setStep] = useState<'phone' | 'otp'>('phone');
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState('');
+  const [fullPhoneNumber, setFullPhoneNumber] = useState('');
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -170,7 +173,7 @@ export function PhoneLogin({ onLoginSuccess }: PhoneLoginProps) {
     setError('');
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSendOTP = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
@@ -185,19 +188,69 @@ export function PhoneLogin({ onLoginSuccess }: PhoneLoginProps) {
 
     setIsLoading(true);
 
-          // Combine country code with phone number
-          const fullPhoneNumber = `${selectedCountry.code}${cleanedPhone}`;
+    try {
+      // Combine country code with phone number
+      const fullPhone = `${selectedCountry.code}${cleanedPhone}`;
+      setFullPhoneNumber(fullPhone);
 
-          // No real validation - accept any input for testing
-          setTimeout(() => {
-            setIsLoading(false);
-            setIsSuccess(true);
+      // Send OTP request
+      const response = await fetch('/api/auth/send-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phoneNumber: fullPhone })
+      });
 
-            // After success animation, proceed to login with full phone number
-            setTimeout(() => {
-              onLoginSuccess(fullPhoneNumber);
-            }, 1500);
-          }, 1500);
+      const data = await response.json();
+
+      if (data.success) {
+        setStep('otp');
+        setError('');
+      } else {
+        setError(data.message || (dir === 'rtl' ? 'حدث خطأ في إرسال كود التحقق' : 'Failed to send verification code'));
+      }
+    } catch (err: any) {
+      setError(err.message || (dir === 'rtl' ? 'حدث خطأ في الاتصال' : 'Connection error'));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleVerifyOTP = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+
+    if (!otp || otp.length !== 6) {
+      setError(dir === 'rtl' ? 'يرجى إدخال كود التحقق (6 أرقام)' : 'Please enter 6-digit OTP code');
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const response = await fetch('/api/auth/verify-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phoneNumber: fullPhoneNumber, code: otp })
+      });
+
+      const data = await response.json();
+
+      if (data.success && data.user) {
+        setIsLoading(false);
+        setIsSuccess(true);
+
+        // After success animation, proceed to login
+        setTimeout(() => {
+          onLoginSuccess(fullPhoneNumber);
+        }, 1500);
+      } else {
+        setError(data.message || (dir === 'rtl' ? 'كود التحقق غير صحيح' : 'Invalid verification code'));
+        setIsLoading(false);
+      }
+    } catch (err: any) {
+      setError(err.message || (dir === 'rtl' ? 'حدث خطأ في الاتصال' : 'Connection error'));
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -244,7 +297,8 @@ export function PhoneLogin({ onLoginSuccess }: PhoneLoginProps) {
 
           {/* Login Form - Better spacing and layout */}
           {!isSuccess ? (
-            <form onSubmit={handleSubmit} className="space-y-6 sm:space-y-7 md:space-y-8">
+            step === 'phone' ? (
+            <form onSubmit={handleSendOTP} className="space-y-6 sm:space-y-7 md:space-y-8">
               <div className="space-y-4 sm:space-y-5">
                 <label htmlFor="phone" className="text-sm sm:text-base font-semibold text-gray-700 flex items-center gap-2 mb-3">
                   <Phone className="w-5 h-5 sm:w-6 sm:h-6 text-yellow-600" />
@@ -352,16 +406,104 @@ export function PhoneLogin({ onLoginSuccess }: PhoneLoginProps) {
                 {isLoading ? (
                   <span className="flex items-center justify-center gap-2">
                     <Loader2 className="w-5 h-5 sm:w-6 sm:h-6 animate-spin" />
-                    <span className="text-base sm:text-lg">{dir === 'rtl' ? 'جاري الدخول...' : 'Logging in...'}</span>
+                    <span className="text-base sm:text-lg">{dir === 'rtl' ? 'جاري الإرسال...' : 'Sending...'}</span>
                   </span>
                 ) : (
                   <span className="flex items-center justify-center gap-2">
-                    <span className="text-base sm:text-lg">{dir === 'rtl' ? 'دخول' : 'Login'}</span>
+                    <span className="text-base sm:text-lg">{dir === 'rtl' ? 'إرسال كود التحقق' : 'Send Verification Code'}</span>
                     <ArrowRight className={cn("w-5 h-5 sm:w-6 sm:h-6", dir === 'rtl' && "rotate-180")} />
                   </span>
                 )}
               </Button>
             </form>
+            ) : (
+              <form onSubmit={handleVerifyOTP} className="space-y-6 sm:space-y-7 md:space-y-8">
+                <div className="space-y-4 sm:space-y-5">
+                  <label htmlFor="otp" className="text-sm sm:text-base font-semibold text-gray-700 flex items-center gap-2 mb-3">
+                    <Phone className="w-5 h-5 sm:w-6 sm:h-6 text-yellow-600" />
+                    {dir === 'rtl' ? 'أدخل كود التحقق المرسل إلى رقمك الخاص' : 'Enter the verification code sent to your private number'}
+                  </label>
+
+                  <Input
+                    id="otp"
+                    type="text"
+                    value={otp}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/\D/g, '').slice(0, 6);
+                      setOtp(value);
+                      setError('');
+                    }}
+                    placeholder={dir === 'rtl' ? 'أدخل كود التحقق (6 أرقام)' : 'Enter verification code (6 digits)'}
+                    className={cn(
+                      "text-base h-14 sm:h-16 border-2 transition-all duration-200 text-center text-2xl tracking-widest",
+                      "focus:border-yellow-500 focus:ring-2 focus:ring-yellow-500/20",
+                      error ? "border-red-400 focus:border-red-500 focus:ring-red-500/20" : "border-gray-300",
+                      "bg-white font-medium text-gray-900",
+                      "placeholder:text-gray-400",
+                      "hover:border-yellow-400",
+                      "px-4 sm:px-5"
+                    )}
+                    dir="ltr"
+                    disabled={isLoading}
+                    maxLength={6}
+                  />
+
+                  {error && (
+                    <div className="flex items-center gap-2 p-3 sm:p-4 bg-red-50 border border-red-200 rounded-lg mt-3">
+                      <span className="text-red-500 text-base">⚠</span>
+                      <p className="text-sm sm:text-base font-medium text-red-600">{error}</p>
+                    </div>
+                  )}
+
+                  <p className="text-xs sm:text-sm text-gray-500 text-center px-2 mt-2">
+                    {dir === 'rtl'
+                      ? `تم إرسال كود التحقق إلى ${fullPhoneNumber}`
+                      : `Verification code sent to ${fullPhoneNumber}`}
+                  </p>
+                </div>
+
+                <Button
+                  type="submit"
+                  disabled={isLoading || otp.length !== 6}
+                  className={cn(
+                    "w-full h-14 sm:h-16 text-base sm:text-lg font-semibold rounded-lg shadow-md",
+                    "bg-gradient-to-r from-yellow-500 to-amber-500",
+                    "hover:from-yellow-600 hover:to-amber-600",
+                    "text-white transition-all duration-200",
+                    "hover:shadow-lg hover:shadow-yellow-500/30",
+                    "disabled:opacity-50 disabled:cursor-not-allowed",
+                    "relative overflow-hidden",
+                    "min-h-[56px] touch-manipulation",
+                    "mt-4 sm:mt-6"
+                  )}
+                >
+                  {isLoading ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <Loader2 className="w-5 h-5 sm:w-6 sm:h-6 animate-spin" />
+                      <span className="text-base sm:text-lg">{dir === 'rtl' ? 'جاري التحقق...' : 'Verifying...'}</span>
+                    </span>
+                  ) : (
+                    <span className="flex items-center justify-center gap-2">
+                      <span className="text-base sm:text-lg">{dir === 'rtl' ? 'تحقق' : 'Verify'}</span>
+                      <ArrowRight className={cn("w-5 h-5 sm:w-6 sm:h-6", dir === 'rtl' && "rotate-180")} />
+                    </span>
+                  )}
+                </Button>
+
+                <Button
+                  type="button"
+                  onClick={() => {
+                    setStep('phone');
+                    setOtp('');
+                    setError('');
+                  }}
+                  className="w-full text-sm text-gray-600 hover:text-gray-900 underline"
+                  variant="ghost"
+                >
+                  {dir === 'rtl' ? '← العودة لتغيير الرقم' : '← Back to change number'}
+                </Button>
+              </form>
+            )
           ) : (
             <div className="flex flex-col items-center justify-center py-12 sm:py-16 space-y-6 sm:space-y-8">
               <CheckCircle2 className="w-16 h-16 sm:w-20 sm:h-20 text-green-500 animate-scale-in" />
