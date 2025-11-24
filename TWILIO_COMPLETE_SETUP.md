@@ -41,9 +41,10 @@ your_auth_token_here
 #### متغير 1: TWILIO_ACCOUNT_SID
 ```
 Name: TWILIO_ACCOUNT_SID
-Value: ACd9460d5b78c701ada82ebce57c8680d5
+Value: YOUR_ACCOUNT_SID_HERE
 Environment: Production, Preview, Development
 ```
+(احصل على القيمة الحقيقية من Twilio Dashboard)
 
 #### متغير 2: TWILIO_AUTH_TOKEN
 ```
@@ -145,8 +146,8 @@ Environment: Production, Preview, Development
 
 ## ✅ الخلاصة:
 
-1. ✅ **Account SID**: `ACd9460d5b78c701ada82ebce57c8680d5`
-2. ✅ **Auth Token**: `bae7e3c46ab3b07d6c2e9761595661b5`
+1. ✅ **Account SID**: (احصل عليه من Twilio Dashboard)
+2. ✅ **Auth Token**: (احصل عليه من Twilio Dashboard)
 3. ✅ **Phone Number**: `+12317743353`
 4. ⏳ **أضفهم في Vercel** (راجع الخطوات أعلاه)
 5. ⏳ **Redeploy**

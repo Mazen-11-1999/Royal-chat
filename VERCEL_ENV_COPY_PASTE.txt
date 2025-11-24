@@ -71,7 +71,7 @@ Value: https://royal-chat.vercel.app
 9. TWILIO_ACCOUNT_SID (لإرسال SMS)
 ─────────────────────────────────────────
 Name: TWILIO_ACCOUNT_SID
-Value: ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+Value: YOUR_ACCOUNT_SID_HERE
 
 ملاحظة: احصل عليه من Twilio Dashboard
 

@@ -10,7 +10,8 @@
 
 ### 1️⃣ Account SID
 - يبدأ بـ `AC...`
-- مثال: `AC1234567890abcdef1234567890abcdef`
+- مثال: `YOUR_ACCOUNT_SID_HERE`
+(احصل على القيمة الحقيقية من Twilio Dashboard)
 
 ### 2️⃣ Auth Token
 - سلسلة طويلة من الأحرف
@@ -35,7 +36,7 @@
 
 1. في **الصفحة الرئيسية** (Dashboard):
    - ستجد **Account SID** في الأعلى
-   - مثال: `AC1234567890abcdef1234567890abcdef`
+   - مثال: `YOUR_ACCOUNT_SID_HERE`
    - **انسخه** ✅
 
 2. للحصول على **Auth Token**:
@@ -76,10 +77,11 @@
 ## 📝 مثال على القيم:
 
 ```
-TWILIO_ACCOUNT_SID=AC1234567890abcdef1234567890abcdef
-TWILIO_AUTH_TOKEN=a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6
-TWILIO_PHONE_NUMBER=+1234567890
+TWILIO_ACCOUNT_SID=YOUR_ACCOUNT_SID_HERE
+TWILIO_AUTH_TOKEN=YOUR_AUTH_TOKEN_HERE
+TWILIO_PHONE_NUMBER=YOUR_PHONE_NUMBER_HERE
 ```
+(استبدل هذه القيم بالقيم الحقيقية من Twilio Dashboard)
 
 ---
 
@@ -93,9 +95,10 @@ TWILIO_PHONE_NUMBER=+1234567890
 #### 1. TWILIO_ACCOUNT_SID:
 ```
 Name: TWILIO_ACCOUNT_SID
-Value: AC1234567890abcdef1234567890abcdef
+Value: YOUR_ACCOUNT_SID_HERE
 Environment: Production, Preview, Development
 ```
+(استبدل بالقيمة الحقيقية من Twilio Dashboard)
 
 #### 2. TWILIO_AUTH_TOKEN:
 ```

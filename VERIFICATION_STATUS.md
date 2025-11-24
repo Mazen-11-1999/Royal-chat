@@ -104,9 +104,9 @@
 
 ### 1. ✅ **أضف متغيرات Twilio في Vercel:**
 ```
-TWILIO_ACCOUNT_SID=ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-TWILIO_AUTH_TOKEN=your_auth_token_here
-TWILIO_PHONE_NUMBER=+1234567890
+TWILIO_ACCOUNT_SID=YOUR_ACCOUNT_SID_HERE
+TWILIO_AUTH_TOKEN=YOUR_AUTH_TOKEN_HERE
+TWILIO_PHONE_NUMBER=YOUR_PHONE_NUMBER_HERE
 ```
 
 ### 2. ✅ **Redeploy في Vercel**
