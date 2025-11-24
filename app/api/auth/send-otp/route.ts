@@ -1,0 +1,162 @@
+import { NextRequest, NextResponse } from 'next/server';
+import mongoose from 'mongoose';
+import twilio from 'twilio';
+
+// MongoDB connection
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/royal-chat';
+
+// Twilio configuration
+const accountSid = process.env.TWILIO_ACCOUNT_SID;
+const authToken = process.env.TWILIO_AUTH_TOKEN;
+const twilioPhoneNumber = process.env.TWILIO_PHONE_NUMBER;
+
+// Initialize Twilio client only if credentials are available
+const client = accountSid && authToken ? twilio(accountSid, authToken) : null;
+
+// OTP Schema
+const OTPSchema = new mongoose.Schema({
+  phoneNumber: { type: String, required: true, index: true },
+  email: { type: String, required: true },
+  code: { type: String, required: true },
+  expiresAt: { type: Date, required: true },
+  verified: { type: Boolean, default: false },
+  createdAt: { type: Date, default: Date.now }
+});
+
+// User Schema
+const UserSchema = new mongoose.Schema({
+  phoneNumber: { type: String, required: true, unique: true, index: true },
+  name: { type: String, required: true },
+  avatar: { type: String, default: '' },
+  email: { type: String, default: '' },
+  status: { type: String, enum: ['online', 'offline', 'away', 'busy', 'invisible'], default: 'offline' },
+  lastSeen: { type: Date, default: Date.now },
+  bio: { type: String, default: '' },
+  isVerified: { type: Boolean, default: false },
+  createdAt: { type: Date, default: Date.now },
+  updatedAt: { type: Date, default: Date.now }
+});
+
+// Generate OTP code
+function generateOTP(): string {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+}
+
+// Format phone number (add country code if missing)
+function formatPhoneNumber(phoneNumber: string): string {
+  // Remove any non-digit characters
+  const cleaned = phoneNumber.replace(/\D/g, '');
+
+  // If it doesn't start with country code, assume it's Yemen (+967)
+  if (!cleaned.startsWith('967')) {
+    return `+967${cleaned}`;
+  }
+
+  return `+${cleaned}`;
+}
+
+// Connect to MongoDB
+async function connectDB() {
+  if (mongoose.connections[0].readyState) {
+    return;
+  }
+  try {
+    await mongoose.connect(MONGODB_URI);
+    console.log('✅ Connected to MongoDB');
+  } catch (error) {
+    console.error('❌ MongoDB connection error:', error);
+    throw error;
+  }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const { phoneNumber, email } = body;
+
+    if (!phoneNumber) {
+      return NextResponse.json(
+        { success: false, message: 'رقم الهاتف مطلوب' },
+        { status: 400 }
+      );
+    }
+
+    // Connect to database
+    await connectDB();
+
+    // Get models
+    const OTP = mongoose.models.OTP || mongoose.model('OTP', OTPSchema);
+    const User = mongoose.models.User || mongoose.model('User', UserSchema);
+
+    // Check if user exists
+    const existingUser = await User.findOne({ phoneNumber });
+
+    // Generate OTP
+    const code = generateOTP();
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+    // Delete old OTPs for this phone number
+    await OTP.deleteMany({ phoneNumber, verified: false });
+
+    // Save new OTP
+    await OTP.create({
+      phoneNumber,
+      email: email || '',
+      code,
+      expiresAt,
+      verified: false
+    });
+
+    // Format phone number
+    const formattedPhone = formatPhoneNumber(phoneNumber);
+
+    // Send SMS via Twilio
+    if (!client || !twilioPhoneNumber) {
+      console.error('Twilio credentials not configured');
+      // For development/testing: log the code instead
+      console.log(`[DEV MODE] OTP Code for ${phoneNumber}: ${code}`);
+      return NextResponse.json({
+        success: true,
+        message: 'تم إرسال كود التحقق (وضع التطوير - تحقق من Console)'
+      });
+    }
+
+    try {
+      await client.messages.create({
+        body: `كود التحقق الخاص بك في Royal Chat هو: ${code}\n\nهذا الكود صالح لمدة 10 دقائق فقط.`,
+        from: twilioPhoneNumber,
+        to: formattedPhone
+      });
+
+      return NextResponse.json({
+        success: true,
+        message: 'تم إرسال كود التحقق إلى رقم هاتفك'
+      });
+    } catch (twilioError: any) {
+      console.error('Twilio error:', twilioError);
+
+      // Handle Twilio specific errors
+      if (twilioError.code === 21211) {
+        return NextResponse.json({
+          success: false,
+          message: 'رقم الهاتف غير صحيح'
+        }, { status: 400 });
+      }
+
+      if (twilioError.code === 21608) {
+        return NextResponse.json({
+          success: false,
+          message: 'رقم الهاتف غير مدعوم في حساب Twilio التجريبي'
+        }, { status: 400 });
+      }
+
+      throw twilioError;
+    }
+  } catch (error: any) {
+    console.error('Error in send-otp API route:', error);
+    return NextResponse.json(
+      { success: false, message: error.message || 'حدث خطأ في إرسال كود التحقق' },
+      { status: 500 }
+    );
+  }
+}

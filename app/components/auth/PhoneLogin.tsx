@@ -200,7 +200,37 @@ export function PhoneLogin({ onLoginSuccess }: PhoneLoginProps) {
         body: JSON.stringify({ phoneNumber: fullPhone })
       });
 
-      const data = await response.json();
+      // Check if response is ok
+      if (!response.ok) {
+        const errorText = await response.text();
+        let errorData;
+        try {
+          errorData = JSON.parse(errorText);
+        } catch {
+          errorData = { success: false, message: errorText || (dir === 'rtl' ? 'حدث خطأ في الخادم' : 'Server error') };
+        }
+        setError(errorData.message || (dir === 'rtl' ? 'حدث خطأ في إرسال كود التحقق' : 'Failed to send verification code'));
+        setIsLoading(false);
+        return;
+      }
+
+      // Parse response
+      const responseText = await response.text();
+      if (!responseText) {
+        setError(dir === 'rtl' ? 'لم يتم استلام رد من الخادم' : 'No response from server');
+        setIsLoading(false);
+        return;
+      }
+
+      let data;
+      try {
+        data = JSON.parse(responseText);
+      } catch (parseError) {
+        console.error('Error parsing response:', parseError, responseText);
+        setError(dir === 'rtl' ? 'خطأ في معالجة الاستجابة' : 'Error processing response');
+        setIsLoading(false);
+        return;
+      }
 
       if (data.success) {
         setStep('otp');
@@ -209,6 +239,7 @@ export function PhoneLogin({ onLoginSuccess }: PhoneLoginProps) {
         setError(data.message || (dir === 'rtl' ? 'حدث خطأ في إرسال كود التحقق' : 'Failed to send verification code'));
       }
     } catch (err: any) {
+      console.error('Error sending OTP:', err);
       setError(err.message || (dir === 'rtl' ? 'حدث خطأ في الاتصال' : 'Connection error'));
     } finally {
       setIsLoading(false);
@@ -233,7 +264,37 @@ export function PhoneLogin({ onLoginSuccess }: PhoneLoginProps) {
         body: JSON.stringify({ phoneNumber: fullPhoneNumber, code: otp })
       });
 
-      const data = await response.json();
+      // Check if response is ok
+      if (!response.ok) {
+        const errorText = await response.text();
+        let errorData;
+        try {
+          errorData = JSON.parse(errorText);
+        } catch {
+          errorData = { success: false, message: errorText || (dir === 'rtl' ? 'حدث خطأ في الخادم' : 'Server error') };
+        }
+        setError(errorData.message || (dir === 'rtl' ? 'كود التحقق غير صحيح' : 'Invalid verification code'));
+        setIsLoading(false);
+        return;
+      }
+
+      // Parse response
+      const responseText = await response.text();
+      if (!responseText) {
+        setError(dir === 'rtl' ? 'لم يتم استلام رد من الخادم' : 'No response from server');
+        setIsLoading(false);
+        return;
+      }
+
+      let data;
+      try {
+        data = JSON.parse(responseText);
+      } catch (parseError) {
+        console.error('Error parsing response:', parseError, responseText);
+        setError(dir === 'rtl' ? 'خطأ في معالجة الاستجابة' : 'Error processing response');
+        setIsLoading(false);
+        return;
+      }
 
       if (data.success && data.user) {
         setIsLoading(false);
@@ -248,6 +309,7 @@ export function PhoneLogin({ onLoginSuccess }: PhoneLoginProps) {
         setIsLoading(false);
       }
     } catch (err: any) {
+      console.error('Error verifying OTP:', err);
       setError(err.message || (dir === 'rtl' ? 'حدث خطأ في الاتصال' : 'Connection error'));
       setIsLoading(false);
     }
